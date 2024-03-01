@@ -25,48 +25,153 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late DiagnosticPhaseOneModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  dynamic progress = 0.0;
+  double progress = 0.0;
   dynamic connectionStatus;
+  dynamic pulseVal;
+  dynamic tempVal;
+  dynamic oxyVal;
+  dynamic _temp;
+  dynamic _pulse;
+  dynamic _pulseRound;
+  dynamic _oxy;
+  dynamic _oxyRound;
+  String? _toRound;
+  late Timer _updateTimer;
+  var progressText;
+  late double progressMul; // Store the reference to the Timer
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => DiagnosticPhaseOneModel());
-    getData();
-    startDiagnosticTimer();
+    _updateTimer = Timer(Duration.zero, () {});
+    progress = 0.0;
+    progressText = '0.00';
+    progressMul = 0.00;
+    getDiagData();
+    // startDiagnosticTimer();
   }
 
-  Future<void> getData() async {
+  // Future<void> getData() async {
+  //   final String wemosIPAddress =
+  //       '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
+  //   try {
+  //     final response =
+  //         await http.get(Uri.parse('http://$wemosIPAddress/getData'));
+  //     if (response.statusCode == 200) {
+  //       final jsonData = json.decode(response.body);
+  //       setState(() {
+  //         String string_progress = jsonData['progress'];
+  //         progress = double.parse(string_progress);
+  //         print(progress);
+  //       });
+  //     } else {
+  //       connectionStatus = 'Not Connected to Wemos D1 Mini';
+  //     }
+  //   } catch (e) {
+  //     connectionStatus = 'Error: $e';
+  //   }
+  // }
+
+  // void startDiagnosticTimer() {
+  //   const Duration updateInterval = Duration(seconds: 1);
+
+  //   Timer.periodic(updateInterval, (Timer timer) async {
+  //     await getData(); // Update temperature periodically
+  //   });
+  // }
+  Future<void> checkConnection() async {
     final String wemosIPAddress =
         '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
+
     try {
-      final response =
-          await http.get(Uri.parse('http://$wemosIPAddress/getData'));
+      final response = await http.get(Uri.parse('http://$wemosIPAddress/'));
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         setState(() {
-          progress = jsonData['progress'];
+          connectionStatus = 'Connected';
+          _temp = jsonData['tempVal'];
+          _toRound = _temp.toStringAsFixed(2);
+          _temp = double.parse(_toRound!);
+
+          _pulse = jsonData['pulseVal'];
+          _pulseRound = _pulse.toStringAsFixed(2);
+          _pulse = double.parse(_pulseRound!);
+
+          _oxy = jsonData['oxyVal'];
+          _oxyRound = _oxy.toStringAsFixed(2);
+          _oxy = double.parse(_oxyRound!);
+
+          tempVal = _temp.toString();
+          print('Temp: $tempVal'); // Debug print
+          oxyVal = _oxy.toString();
+          print('Oxygen: $oxyVal'); // Debug print
+          pulseVal = _pulse.toString();
+          print('Pulse: $pulseVal'); // Debug print
         });
       } else {
-        connectionStatus = 'Not Connected to Wemos D1 Mini';
+        setState(() {
+          connectionStatus = 'Not Connected to Wemos D1 Mini';
+          tempVal = '0';
+          oxyVal = '0';
+          pulseVal = '0';
+        });
       }
     } catch (e) {
-      connectionStatus = 'Error: $e';
+      setState(() {
+        connectionStatus = 'Error: $e';
+        tempVal = '0';
+        oxyVal = '0';
+        pulseVal = '0';
+      });
     }
   }
 
-  void startDiagnosticTimer() {
+  void disposeTimer() {
+    _updateTimer.cancel();
+  }
+
+  void startTempUpdateTimer() {
     const Duration updateInterval = Duration(seconds: 1);
 
-    Timer.periodic(updateInterval, (Timer timer) async {
-      await getData(); // Update temperature periodically
+    // Cancel the previous timer, if any
+    _updateTimer.cancel();
+
+    // Store the reference to the new Timer
+    _updateTimer = Timer.periodic(updateInterval, (Timer timer) async {
+      await checkConnection(); // Update temperature periodically
+    });
+  }
+
+  void getDiagData() async {
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      // Your code to be executed every other second
+      startTempUpdateTimer();
+      setState(() {
+        progress = progress + 0.01;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        print(progress);
+      });
+
+      // Uncomment the following line if you want the task to stop after a certain number of iterations
+      if (timer.tick >= 60) {
+        timer.cancel();
+        setState(() {
+          progress = 1.0;
+          progressMul = progress * 100;
+          progressText = progressMul.toStringAsFixed(0);
+          print(progress);
+        });
+      }
+      // Cancels the timer after 10 iterations
     });
   }
 
   @override
   void dispose() {
     _model.dispose();
-
+    _updateTimer.cancel();
     super.dispose();
   }
 
@@ -154,7 +259,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                               backgroundColor:
                                   FlutterFlowTheme.of(context).accent4,
                               center: Text(
-                                '${progress * 100}%',
+                                '${progressText}%',
                                 style: FlutterFlowTheme.of(context)
                                     .headlineLarge
                                     .override(

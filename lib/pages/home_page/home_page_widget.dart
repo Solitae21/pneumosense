@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/methods/connect.dart' as connect;
+import 'package:web_socket_channel/io.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -20,9 +21,9 @@ class HomePageWidget extends StatefulWidget {
 }
 
 class _HomePageWidgetState extends State<HomePageWidget>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late HomePageModel _model;
-
+  final channel = IOWebSocketChannel.connect('ws://192.168.4.1:81');
   final scaffoldKey = GlobalKey<ScaffoldState>();
   dynamic pulseVal;
   dynamic tempVal;
@@ -34,6 +35,8 @@ class _HomePageWidgetState extends State<HomePageWidget>
   dynamic _oxy;
   dynamic _oxyRound;
   String? _toRound;
+  late Timer _updateTimer; // Store the reference to the Timer
+  bool _isTimerActive = false;
 
   @override
   void initState() {
@@ -48,15 +51,37 @@ class _HomePageWidgetState extends State<HomePageWidget>
     tempVal = '0';
     oxyVal = '0';
     connectionStatus = 'Not Connected';
-    checkConnection();
+
+    _updateTimer = Timer(Duration.zero, () {});
+    _isTimerActive = true;
     startTempUpdateTimer();
+
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
   void dispose() {
-    _model.dispose();
+    // Remove the observer when the widget is disposed
+    WidgetsBinding.instance!.removeObserver(this);
 
+    // Cancel the timer when the widget is disposed
+    _updateTimer.cancel();
+    _model.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Handle app lifecycle changes
+    if (state == AppLifecycleState.resumed) {
+      // App has resumed, restart the timer
+      if (_isTimerActive) {
+        startTempUpdateTimer();
+      }
+    } else {
+      // App is in a background or inactive state, stop the timer
+      _updateTimer.cancel();
+    }
   }
 
   Future<void> checkConnection() async {
@@ -106,10 +131,18 @@ class _HomePageWidgetState extends State<HomePageWidget>
     }
   }
 
+  void disposeTimer() {
+    _updateTimer.cancel();
+  }
+
   void startTempUpdateTimer() {
     const Duration updateInterval = Duration(seconds: 1);
 
-    Timer.periodic(updateInterval, (Timer timer) async {
+    // Cancel the previous timer, if any
+    _updateTimer.cancel();
+
+    // Store the reference to the new Timer
+    _updateTimer = Timer.periodic(updateInterval, (Timer timer) async {
       await checkConnection(); // Update temperature periodically
     });
   }
@@ -725,8 +758,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                       children: [
                                         FFButtonWidget(
                                           onPressed: () async {
-                                            connect.resetProgress();
-                                            connect.sendInstruction();
+                                            disposeTimer();
                                             context.pushNamed(
                                               'DiagnosticPhaseOne',
                                               extra: <String, dynamic>{

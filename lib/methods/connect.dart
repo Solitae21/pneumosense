@@ -79,18 +79,21 @@ void sendInstruction() async {
   }
 }
 
-Future<void> resetProgress() async {
+Future<int> resetProgress() async {
   try {
     final response = await http.get(Uri.http(wemosIPAddress, '/reset'));
 
     if (response.statusCode == 200) {
       print('Progress reset successfully');
+      return 200;
       // You can add any additional actions here after the reset
     } else {
       print('Failed to reset progress. Status code: ${response.statusCode}');
+      return 0;
     }
   } catch (error) {
     print('Error: $error');
+    return 0;
   }
 }
 
