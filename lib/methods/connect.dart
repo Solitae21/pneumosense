@@ -120,3 +120,11 @@ void startDiagnosticTimer(Function updateProgress) {
     await getData(); // Update temperature periodically
   });
 }
+
+double getAverage(List<double> value) {
+  double average = 0;
+  value.forEach((element) {
+    average = average + element;
+  });
+  return average / value.length;
+}

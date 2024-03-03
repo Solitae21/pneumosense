@@ -12,6 +12,7 @@ import '../../methods/connect.dart' as connect;
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
+import '../../methods/learning_model.dart' as pneumosense;
 
 class DiagnosticPhaseOneWidget extends StatefulWidget {
   const DiagnosticPhaseOneWidget({super.key});
@@ -36,142 +37,185 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   dynamic _oxy;
   dynamic _oxyRound;
   String? _toRound;
-  late Timer _updateTimer;
   var progressText;
-  late double progressMul; // Store the reference to the Timer
+  late double progressMul;
+  late List<double> pulseAvgList;
+  late List<double> oxyAvgList;
+  late List<double> tempAvgList;
+  late double pulseAvg;
+  late double tempAvg;
+  late double oxyAvg;
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => DiagnosticPhaseOneModel());
-    _updateTimer = Timer(Duration.zero, () {});
     progress = 0.0;
-    progressText = '0.00';
+    progressText = '0';
     progressMul = 0.00;
+    pulseAvgList = [];
+    oxyAvgList = [];
+    tempAvgList = [];
     getDiagData();
-    // startDiagnosticTimer();
+    processData(isComplete);
+    // pneumosense.loadModel();
   }
 
-  // Future<void> getData() async {
-  //   final String wemosIPAddress =
-  //       '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
-  //   try {
-  //     final response =
-  //         await http.get(Uri.parse('http://$wemosIPAddress/getData'));
-  //     if (response.statusCode == 200) {
-  //       final jsonData = json.decode(response.body);
-  //       setState(() {
-  //         String string_progress = jsonData['progress'];
-  //         progress = double.parse(string_progress);
-  //         print(progress);
-  //       });
-  //     } else {
-  //       connectionStatus = 'Not Connected to Wemos D1 Mini';
-  //     }
-  //   } catch (e) {
-  //     connectionStatus = 'Error: $e';
-  //   }
-  // }
+  Completer<bool> isComplete = Completer<bool>();
 
-  // void startDiagnosticTimer() {
-  //   const Duration updateInterval = Duration(seconds: 1);
-
-  //   Timer.periodic(updateInterval, (Timer timer) async {
-  //     await getData(); // Update temperature periodically
-  //   });
-  // }
-  Future<void> checkConnection() async {
+  Future<void> getValues(bool isCompleted) async {
     final String wemosIPAddress =
         '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
+    if (isCompleted == false) {
+      try {
+        final response = await http.get(Uri.parse('http://$wemosIPAddress/'));
+        if (response.statusCode == 200) {
+          final jsonData = json.decode(response.body);
+          setState(() {
+            connectionStatus = 'Connected';
+            _temp = jsonData['tempVal'];
+            _toRound = _temp.toStringAsFixed(2);
+            _temp = double.parse(_toRound!);
 
-    try {
-      final response = await http.get(Uri.parse('http://$wemosIPAddress/'));
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
+            _pulse = jsonData['pulseVal'];
+            _pulseRound = _pulse.toStringAsFixed(2);
+            _pulse = double.parse(_pulseRound!);
+
+            _oxy = jsonData['oxyVal'];
+            _oxyRound = _oxy.toStringAsFixed(2);
+            _oxy = double.parse(_oxyRound!);
+
+            // tempVal = _temp.toString();
+            // print('Temp: $tempVal'); // Debug print
+            // oxyVal = _oxy.toString();
+            // print('Oxygen: $oxyVal'); // Debug print
+            // pulseVal = _pulse.toString();
+            // print('Pulse: $pulseVal'); // Debug print
+            if (progress < 0.6) {
+              tempAvgList.add(jsonData['tempVal']);
+              pulseAvgList.add(jsonData['pulseVal']);
+              oxyAvgList.add(jsonData['oxyVal']);
+              progress = progress + 0.01;
+              progressMul = progress * 100;
+              progressText = progressMul.toStringAsFixed(0);
+              print(tempAvgList);
+              print(oxyAvgList);
+              print(pulseAvgList);
+              print(progress);
+            }
+          });
+        } else {
+          setState(() {
+            connectionStatus = 'Not Connected to Wemos D1 Mini';
+            tempVal = '0';
+            oxyVal = '0';
+            pulseVal = '0';
+          });
+        }
+      } catch (e) {
         setState(() {
-          connectionStatus = 'Connected';
-          _temp = jsonData['tempVal'];
-          _toRound = _temp.toStringAsFixed(2);
-          _temp = double.parse(_toRound!);
-
-          _pulse = jsonData['pulseVal'];
-          _pulseRound = _pulse.toStringAsFixed(2);
-          _pulse = double.parse(_pulseRound!);
-
-          _oxy = jsonData['oxyVal'];
-          _oxyRound = _oxy.toStringAsFixed(2);
-          _oxy = double.parse(_oxyRound!);
-
-          tempVal = _temp.toString();
-          print('Temp: $tempVal'); // Debug print
-          oxyVal = _oxy.toString();
-          print('Oxygen: $oxyVal'); // Debug print
-          pulseVal = _pulse.toString();
-          print('Pulse: $pulseVal'); // Debug print
-        });
-      } else {
-        setState(() {
-          connectionStatus = 'Not Connected to Wemos D1 Mini';
+          connectionStatus = 'Error: $e';
           tempVal = '0';
           oxyVal = '0';
           pulseVal = '0';
         });
       }
-    } catch (e) {
+    }
+  }
+
+  // void startDiagnosticTimer() {
+  //   const Duration updateInterval = Duration(seconds: 1);
+
+  //   Timer.periodic(updateInterval, (Timer timer) async {
+  //     await getValues(); // Update temperature periodically
+  //   });
+  // }
+
+  void processData(Completer<bool> isComplete) async {
+    bool isCompleted = await isComplete.future;
+    if (isCompleted == true) {
       setState(() {
-        connectionStatus = 'Error: $e';
-        tempVal = '0';
-        oxyVal = '0';
-        pulseVal = '0';
+        progress = 1.0;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        tempAvg = connect.getAverage(tempAvgList);
+        oxyAvg = connect.getAverage(oxyAvgList);
+        pulseAvg = connect.getAverage(pulseAvgList);
+        print(progress);
+        print(tempAvg);
+        print(oxyAvg);
+        print(pulseAvg);
+        print(
+            '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+        // pneumosense.predict(
+        //     tempAvg: tempAvg, pulseAvg: pulseAvg, oxyAvg: oxyAvg);
+        tempAvgList.clear();
+        oxyAvgList.clear();
+        pulseAvgList.clear();
       });
     }
   }
 
-  void disposeTimer() {
-    _updateTimer.cancel();
-  }
+  void getDiagData() {
+    bool timerCanceled = false;
+    if (progress < 0.6) {
+      Timer.periodic(Duration(seconds: 1), (timer) async {
+        await getValues(timerCanceled);
 
-  void startTempUpdateTimer() {
-    const Duration updateInterval = Duration(seconds: 1);
-
-    // Cancel the previous timer, if any
-    _updateTimer.cancel();
-
-    // Store the reference to the new Timer
-    _updateTimer = Timer.periodic(updateInterval, (Timer timer) async {
-      await checkConnection(); // Update temperature periodically
-    });
-  }
-
-  void getDiagData() async {
-    Timer.periodic(Duration(seconds: 1), (timer) {
-      // Your code to be executed every other second
-      startTempUpdateTimer();
-      setState(() {
-        progress = progress + 0.01;
-        progressMul = progress * 100;
-        progressText = progressMul.toStringAsFixed(0);
-        print(progress);
+        if (progress >= 0.6) {
+          timerCanceled = true;
+          isComplete.complete(true);
+          timer.cancel();
+        }
       });
+    }
+    // else if (progress >= 0.6) {
+    //   setState(() {
+    //     progress = 1.0;
+    //     progressMul = progress * 100;
+    //     progressText = progressMul.toStringAsFixed(0);
+    //     tempAvg = connect.getAverage(tempAvgList);
+    //     oxyAvg = connect.getAverage(oxyAvgList);
+    //     pulseAvg = connect.getAverage(pulseAvgList);
+    //     print(progress);
+    //     print(tempAvg);
+    //     print(oxyAvg);
+    //     print(pulseAvg);
+    //     print(
+    //         '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+    //     tempAvgList.clear();
+    //     oxyAvgList.clear();
+    //     pulseAvgList.clear();
+    //   });
+    // }
 
-      // Uncomment the following line if you want the task to stop after a certain number of iterations
-      if (timer.tick >= 60) {
-        timer.cancel();
-        setState(() {
-          progress = 1.0;
-          progressMul = progress * 100;
-          progressText = progressMul.toStringAsFixed(0);
-          print(progress);
-        });
-      }
-      // Cancels the timer after 10 iterations
-    });
+    // while (progress < 0.6) {
+    //   startDiagnosticTimer();
+    // }
+    // if (progress >= 0.6) {
+    //   setState(() {
+    //     progress = 1.0;
+    //     progressMul = progress * 100;
+    //     progressText = progressMul.toStringAsFixed(0);
+    //     tempAvg = connect.getAverage(tempAvgList);
+    //     oxyAvg = connect.getAverage(oxyAvgList);
+    //     pulseAvg = connect.getAverage(pulseAvgList);
+    //     print(progress);
+    //     print(tempAvg);
+    //     print(oxyAvg);
+    //     print(pulseAvg);
+    //     print(
+    //         '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+    //     tempAvgList.clear();
+    //     oxyAvgList.clear();
+    //     pulseAvgList.clear();
+    //   });
+    // }
   }
 
   @override
   void dispose() {
     _model.dispose();
-    _updateTimer.cancel();
     super.dispose();
   }
 
