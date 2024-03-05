@@ -54,12 +54,12 @@ dependencies:
   url_launcher_ios: 6.1.4
   url_launcher_platform_interface: 2.1.2
   http: ^0.13.3
-  tflite_flutter: ^0.10.4
 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.0
+  tflite_flutter: ^0.10.4
 
 dev_dependencies:
   flutter_lints: 3.0.0
@@ -89,8 +89,7 @@ flutter:
     - assets/lottie_animations/
     - assets/rive_animations/
     - assets/pdfs/
-    - lib/model
-    - assets/pneumosensemodel.tflite
+    - assets/converted_pneumosensemodel2.tflite
     - assets/labels.txt
   fonts:
     - family: 'sf pro display'

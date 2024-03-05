@@ -45,7 +45,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late double pulseAvg;
   late double tempAvg;
   late double oxyAvg;
-
+  final pneumosenseModel = pneumosense.PneumoniaDetector();
   @override
   void initState() {
     super.initState();
@@ -58,7 +58,6 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
     tempAvgList = [];
     getDiagData();
     processData(isComplete);
-    // pneumosense.loadModel();
   }
 
   Completer<bool> isComplete = Completer<bool>();
@@ -134,6 +133,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   void processData(Completer<bool> isComplete) async {
     bool isCompleted = await isComplete.future;
     if (isCompleted == true) {
+      await pneumosenseModel.loadModel();
       setState(() {
         progress = 1.0;
         progressMul = progress * 100;
@@ -147,12 +147,15 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
         print(pulseAvg);
         print(
             '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
-        // pneumosense.predict(
-        //     tempAvg: tempAvg, pulseAvg: pulseAvg, oxyAvg: oxyAvg);
         tempAvgList.clear();
         oxyAvgList.clear();
         pulseAvgList.clear();
       });
+      await pneumosenseModel.predict(
+          // Call predict inside the callback
+          tempAvg: tempAvg,
+          pulseAvg: pulseAvg,
+          oxyAvg: oxyAvg);
     }
   }
 
