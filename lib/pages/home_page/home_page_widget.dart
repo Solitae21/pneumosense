@@ -1,3 +1,5 @@
+import 'package:pneumosense/components/historyContainer.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -12,6 +14,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/methods/connect.dart' as connect;
 import 'package:web_socket_channel/io.dart';
+import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomePageWidget extends StatefulWidget {
   const HomePageWidget({super.key});
@@ -37,7 +41,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
   String? _toRound;
   late Timer _updateTimer; // Store the reference to the Timer
   bool _isTimerActive = false;
-
+  late DateTime now;
+  late bool isVisible;
+  // late String formattedTime;
   @override
   void initState() {
     super.initState();
@@ -51,12 +57,14 @@ class _HomePageWidgetState extends State<HomePageWidget>
     tempVal = '0';
     oxyVal = '0';
     connectionStatus = 'Not Connected';
-
+    now = DateTime.now();
+    // Split on space to get date part
     _updateTimer = Timer(Duration.zero, () {});
     _isTimerActive = true;
     startTempUpdateTimer();
-
+    requestStoragePermission();
     WidgetsBinding.instance!.addObserver(this);
+    isVisible = false;
   }
 
   @override
@@ -84,6 +92,45 @@ class _HomePageWidgetState extends State<HomePageWidget>
     }
   }
 
+  Future<void> requestStoragePermission() async {
+    final PermissionStatus status =
+        await Permission.manageExternalStorage.request();
+
+    if (status.isGranted) {
+      // Permission granted, proceed with file access
+      print('Storage permission granted');
+    } else if (status.isDenied) {
+      // Permission denied, explain and potentially request again
+      print('Storage permission denied');
+      await Permission.storage.request(); // Can request again if desired
+    } else if (status.isPermanentlyDenied) {
+      // User has permanently denied permission, open app settings
+      await openAppSettings();
+    }
+  }
+
+  Stream<String> getTimeStream() async* {
+    while (true) {
+      var now = DateTime.now();
+      String formattedTime = DateFormat('hh:mm a')
+          .format(now); // Example using string manipulation
+      yield formattedTime;
+      await Future.delayed(
+          Duration(seconds: 1)); // Wait 1 second before emitting again
+    }
+  }
+
+  Stream<String> getDateStream() async* {
+    while (true) {
+      var now = DateTime.now();
+      String formattedDate = DateFormat('MMMM dd,yyyy')
+          .format(now); // Example using string manipulation
+      yield formattedDate;
+      await Future.delayed(
+          Duration(seconds: 1)); // Wait 1 second before emitting again
+    }
+  }
+
   Future<void> checkConnection() async {
     final String wemosIPAddress =
         '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
@@ -93,6 +140,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         setState(() {
+          isVisible = true;
           connectionStatus = 'Connected';
           _temp = jsonData['tempVal'];
           _toRound = _temp.toStringAsFixed(2);
@@ -115,6 +163,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
         });
       } else {
         setState(() {
+          isVisible = false;
           connectionStatus = 'Not Connected to Wemos D1 Mini';
           tempVal = '0';
           oxyVal = '0';
@@ -123,6 +172,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
       }
     } catch (e) {
       setState(() {
+        isVisible = false;
         connectionStatus = 'Error: $e';
         tempVal = '0';
         oxyVal = '0';
@@ -145,38 +195,6 @@ class _HomePageWidgetState extends State<HomePageWidget>
     _updateTimer = Timer.periodic(updateInterval, (Timer timer) async {
       await checkConnection(); // Update temperature periodically
     });
-  }
-
-  void createJsonFileOnWemos() async {
-    final String wemosIPAddress = '192.168.4.1';
-    const String wemosD1Url = 'http://wemosIPAddress/create_json';
-    // Prepare JSON data based on your requirements
-    final jsonData = {
-      'pulseVal': 'value1',
-      'tempVal': 'value2',
-      'oxyVal': 'value3',
-      'progress': 'value4,'
-      // ...add more fields as needed
-    };
-
-    // Encode JSON data
-    final jsonEncodedData = jsonEncode(jsonData);
-
-    // Send POST request to Wemos D1
-    final response = await http.post(
-      Uri.parse(wemosD1Url),
-      body: jsonEncodedData,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
-      print('JSON file created successfully on Wemos D1.');
-      // Optionally, display a success message to the user
-    } else {
-      print(
-          'Error creating JSON file: ${response.statusCode} - ${response.body}');
-      // Optionally, display an error message to the user
-    }
   }
 
   @override
@@ -224,8 +242,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
                   child: Column(
                     children: [
                       Align(
-                        alignment: Alignment(-1.0, 0),
+                        alignment: Alignment(0, 0),
                         child: TabBar(
+                          tabAlignment: TabAlignment.start,
                           isScrollable: true,
                           labelColor: FlutterFlowTheme.of(context).primaryText,
                           unselectedLabelColor:
@@ -665,22 +684,37 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                         mainAxisSize:
                                                             MainAxisSize.max,
                                                         children: [
-                                                          Text(
-                                                            'February 07, 2024',
-                                                            style: FlutterFlowTheme
-                                                                    .of(context)
-                                                                .bodyMedium
-                                                                .override(
-                                                                  fontFamily:
-                                                                      'sf pro display',
-                                                                  fontSize:
-                                                                      15.0,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  useGoogleFonts:
-                                                                      false,
-                                                                ),
+                                                          StreamBuilder<String>(
+                                                            stream:
+                                                                getDateStream(),
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (snapshot
+                                                                  .hasData) {
+                                                                return Text(
+                                                                  snapshot
+                                                                      .data!,
+                                                                  style: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .override(
+                                                                        fontFamily:
+                                                                            'sf pro display',
+                                                                        fontSize:
+                                                                            15.0,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                        useGoogleFonts:
+                                                                            false,
+                                                                      ),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasError) {
+                                                                return Text(
+                                                                    'Error: ${snapshot.error}');
+                                                              }
+                                                              return CircularProgressIndicator(); // Show loading indicator initially
+                                                            },
                                                           ),
                                                         ],
                                                       ),
@@ -697,22 +731,37 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                         mainAxisSize:
                                                             MainAxisSize.max,
                                                         children: [
-                                                          Text(
-                                                            '9:41 AM',
-                                                            style: FlutterFlowTheme
-                                                                    .of(context)
-                                                                .bodyMedium
-                                                                .override(
-                                                                  fontFamily:
-                                                                      'sf pro display',
-                                                                  fontSize:
-                                                                      15.0,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
-                                                                  useGoogleFonts:
-                                                                      false,
-                                                                ),
+                                                          StreamBuilder<String>(
+                                                            stream:
+                                                                getTimeStream(),
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (snapshot
+                                                                  .hasData) {
+                                                                return Text(
+                                                                  snapshot
+                                                                      .data!,
+                                                                  style: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .bodyMedium
+                                                                      .override(
+                                                                        fontFamily:
+                                                                            'sf pro display',
+                                                                        fontSize:
+                                                                            15.0,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                        useGoogleFonts:
+                                                                            false,
+                                                                      ),
+                                                                );
+                                                              } else if (snapshot
+                                                                  .hasError) {
+                                                                return Text(
+                                                                    'Error: ${snapshot.error}');
+                                                              }
+                                                              return CircularProgressIndicator(); // Show loading indicator initially
+                                                            },
                                                           ),
                                                         ],
                                                       ),
@@ -751,57 +800,61 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 30.0, 0.0, 0.0),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.max,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        FFButtonWidget(
-                                          onPressed: () async {
-                                            disposeTimer();
-                                            context.pushNamed(
-                                              'DiagnosticPhaseOne',
-                                              extra: <String, dynamic>{
-                                                kTransitionInfoKey:
-                                                    TransitionInfo(
-                                                  hasTransition: true,
-                                                  transitionType:
-                                                      PageTransitionType
-                                                          .rightToLeft,
-                                                ),
-                                              },
-                                            );
-                                          },
-                                          text: 'Take Diagnostic Test',
-                                          options: FFButtonOptions(
-                                            height: 40.0,
-                                            padding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    24.0, 0.0, 24.0, 0.0),
-                                            iconPadding:
-                                                EdgeInsetsDirectional.fromSTEB(
-                                                    0.0, 0.0, 0.0, 0.0),
-                                            color: Color(0xFFDDDDDD),
-                                            textStyle: FlutterFlowTheme.of(
-                                                    context)
-                                                .titleSmall
-                                                .override(
-                                                  fontFamily: 'sf pro display',
-                                                  color: FlutterFlowTheme.of(
-                                                          context)
-                                                      .primaryText,
-                                                  useGoogleFonts: false,
-                                                ),
-                                            elevation: 3.0,
-                                            borderSide: BorderSide(
-                                              color: Colors.transparent,
-                                              width: 1.0,
+                                    child: Visibility(
+                                      visible: isVisible,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.max,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          FFButtonWidget(
+                                            onPressed: () async {
+                                              disposeTimer();
+                                              context.pushNamed(
+                                                'DiagnosticPhaseOne',
+                                                extra: <String, dynamic>{
+                                                  kTransitionInfoKey:
+                                                      TransitionInfo(
+                                                    hasTransition: true,
+                                                    transitionType:
+                                                        PageTransitionType
+                                                            .rightToLeft,
+                                                  ),
+                                                },
+                                              );
+                                            },
+                                            text: 'Take Diagnostic Test',
+                                            options: FFButtonOptions(
+                                              height: 40.0,
+                                              padding: EdgeInsetsDirectional
+                                                  .fromSTEB(
+                                                      24.0, 0.0, 24.0, 0.0),
+                                              iconPadding: EdgeInsetsDirectional
+                                                  .fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                              color: Color(0xFFDDDDDD),
+                                              textStyle:
+                                                  FlutterFlowTheme.of(context)
+                                                      .titleSmall
+                                                      .override(
+                                                        fontFamily:
+                                                            'sf pro display',
+                                                        color:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .primaryText,
+                                                        useGoogleFonts: false,
+                                                      ),
+                                              elevation: 3.0,
+                                              borderSide: BorderSide(
+                                                color: Colors.transparent,
+                                                width: 1.0,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(22.0),
                                             ),
-                                            borderRadius:
-                                                BorderRadius.circular(22.0),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                   Padding(
@@ -812,16 +865,23 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                 ],
                               ),
                             ),
-                            Text(
-                              'Tab View 2',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    fontFamily: 'sf pro display',
-                                    fontSize: 32.0,
-                                    useGoogleFonts: false,
-                                  ),
-                            ),
+                            // Text(
+                            //   'Tab View 2',
+                            //   style: FlutterFlowTheme.of(context)
+                            //       .bodyMedium
+                            //       .override(
+                            //         fontFamily: 'sf pro display',
+                            //         fontSize: 32.0,
+                            //         useGoogleFonts: false,
+                            //       ),
+                            // ),
+                            HistoryContainer(
+                                temp: '76',
+                                pulse: '76',
+                                oxy: '76',
+                                date: 'February 07, 2024',
+                                time: ' 9:41 AM',
+                                result: 0.5),
                           ],
                         ),
                       ),

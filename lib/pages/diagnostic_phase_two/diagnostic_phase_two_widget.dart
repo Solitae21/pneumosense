@@ -1,3 +1,8 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
+import 'package:pneumosense/classes/DiagLog.dart';
+import 'package:pneumosense/methods/fileManagement.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -21,11 +26,37 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
   late DiagnosticPhaseTwoModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-
+  late var result;
+  late double resultVal;
+  late bool isPneumonia;
+  late bool isNormal;
+  late bool condition;
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => DiagnosticPhaseTwoModel());
+    getResult();
+    isPneumonia = false;
+    isNormal = false;
+  }
+
+  bool getCondition(String result) =>
+      double.parse(result) > 0.5 ? isPneumonia = true : isNormal = true;
+
+  Future<void> getResult() async {
+    try {
+      final diagLog = await FileManager().readJsonFile();
+      setState(() {
+        result = diagLog!["result"];
+        print(result);
+        resultVal = double.parse(result);
+        getCondition(result);
+      });
+      // final String getResult =
+      // return getResult;
+    } catch (e) {
+      print(e);
+    }
   }
 
   @override
@@ -116,19 +147,31 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.error,
-                                color: FlutterFlowTheme.of(context).secondary,
-                                size: 120.0,
+                              Visibility(
+                                visible: isPneumonia,
+                                child: isPneumonia != false
+                                    ? Icon(
+                                        Icons.error,
+                                        color: FlutterFlowTheme.of(context)
+                                            .secondary,
+                                        size: 120.0,
+                                      )
+                                    : CircularProgressIndicator(),
                               ),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8.0),
-                                child: Image.asset(
-                                  'assets/images/heart.png',
-                                  width: 100.0,
-                                  height: 100.0,
-                                  fit: BoxFit.cover,
-                                ),
+                              Visibility(
+                                visible: isNormal,
+                                child: isNormal != false
+                                    ? ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(8.0),
+                                        child: Image.asset(
+                                          'assets/images/heart.png',
+                                          width: 100.0,
+                                          height: 100.0,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      )
+                                    : CircularProgressIndicator(),
                               ),
                             ],
                           ),
@@ -140,39 +183,51 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
                         child: Column(
                           mainAxisSize: MainAxisSize.max,
                           children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Your goat might be at risk of pneumonia.',
-                                  style: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        fontFamily: 'sf pro display',
-                                        fontSize: 18.0,
-                                        fontWeight: FontWeight.bold,
-                                        useGoogleFonts: false,
-                                      ),
-                                ),
-                              ],
+                            Visibility(
+                              visible: isPneumonia,
+                              child: isPneumonia != false
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.max,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Your goat might be at risk of pneumonia.',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodyMedium
+                                              .override(
+                                                fontFamily: 'sf pro display',
+                                                fontSize: 17.0,
+                                                fontWeight: FontWeight.bold,
+                                                useGoogleFonts: false,
+                                              ),
+                                        ),
+                                      ],
+                                    )
+                                  : CircularProgressIndicator(),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Your goat is safe from pneumonia.',
-                                  style: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        fontFamily: 'sf pro display',
-                                        fontSize: 18.0,
-                                        fontWeight: FontWeight.bold,
-                                        useGoogleFonts: false,
-                                      ),
-                                ),
-                              ],
+                            Visibility(
+                              visible: isNormal,
+                              child: isNormal != false
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.max,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Your goat is safe from pneumonia.',
+                                          style: FlutterFlowTheme.of(context)
+                                              .bodyMedium
+                                              .override(
+                                                fontFamily: 'sf pro display',
+                                                fontSize: 18.0,
+                                                fontWeight: FontWeight.bold,
+                                                useGoogleFonts: false,
+                                              ),
+                                        ),
+                                      ],
+                                    )
+                                  : CircularProgressIndicator(),
                             ),
                           ],
                         ),
@@ -203,99 +258,126 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
                                     child: Column(
                                       mainAxisSize: MainAxisSize.max,
                                       children: [
-                                        RichText(
-                                          textScaleFactor:
-                                              MediaQuery.of(context)
-                                                  .textScaleFactor,
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text:
-                                                    'The findings suggest that the measured parameters in the goat are consistent  with those seen in goats exhibiting pneumonia symptoms, indicating a ',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily:
-                                                              'sf pro display',
+                                        Visibility(
+                                          visible: isPneumonia,
+                                          child: isPneumonia != false
+                                              ? RichText(
+                                                  textScaleFactor:
+                                                      MediaQuery.of(context)
+                                                          .textScaleFactor,
+                                                  text: TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text:
+                                                            'The findings suggest that the measured parameters in the goat are consistent  with those seen in goats exhibiting pneumonia symptoms, indicating a ',
+                                                        style:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .bodyMedium
+                                                                .override(
+                                                                  fontFamily:
+                                                                      'sf pro display',
+                                                                  color: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .primaryText,
+                                                                  fontSize:
+                                                                      18.0,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .normal,
+                                                                  useGoogleFonts:
+                                                                      false,
+                                                                ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '${resultVal * 100}% ',
+                                                        style: TextStyle(
                                                           color: FlutterFlowTheme
                                                                   .of(context)
-                                                              .primaryText,
+                                                              .secondary,
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                           fontSize: 18.0,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            'likelihood of pneumonia.',
+                                                        style: TextStyle(
                                                           fontWeight:
                                                               FontWeight.normal,
-                                                          useGoogleFonts: false,
+                                                          fontSize: 18.0,
                                                         ),
-                                              ),
-                                              TextSpan(
-                                                text: '90% ',
-                                                style: TextStyle(
-                                                  color: FlutterFlowTheme.of(
-                                                          context)
-                                                      .secondary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 18.0,
-                                                ),
-                                              ),
-                                              TextSpan(
-                                                text:
-                                                    'likelihood of pneumonia.',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.normal,
-                                                  fontSize: 18.0,
-                                                ),
-                                              )
-                                            ],
-                                            style: FlutterFlowTheme.of(context)
-                                                .bodyMedium,
-                                          ),
-                                          textAlign: TextAlign.justify,
+                                                      )
+                                                    ],
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyMedium,
+                                                  ),
+                                                  textAlign: TextAlign.justify,
+                                                )
+                                              : CircularProgressIndicator(),
                                         ),
-                                        RichText(
-                                          textScaleFactor:
-                                              MediaQuery.of(context)
-                                                  .textScaleFactor,
-                                          text: TextSpan(
-                                            children: [
-                                              TextSpan(
-                                                text:
-                                                    'The findings indicate that the parameters measured from the goat show a ',
-                                                style:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .override(
-                                                          fontFamily:
-                                                              'sf pro display',
-                                                          color: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .primaryText,
+                                        Visibility(
+                                          visible: isNormal,
+                                          child: isNormal != false
+                                              ? RichText(
+                                                  textScaleFactor:
+                                                      MediaQuery.of(context)
+                                                          .textScaleFactor,
+                                                  text: TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text:
+                                                            'The findings indicate that the parameters measured from the goat show a ',
+                                                        style:
+                                                            FlutterFlowTheme.of(
+                                                                    context)
+                                                                .bodyMedium
+                                                                .override(
+                                                                  fontFamily:
+                                                                      'sf pro display',
+                                                                  color: FlutterFlowTheme.of(
+                                                                          context)
+                                                                      .primaryText,
+                                                                  fontSize:
+                                                                      18.0,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .normal,
+                                                                  useGoogleFonts:
+                                                                      false,
+                                                                ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            '${resultVal * 100}% ',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Color(0xFF007C2F),
+                                                          fontWeight:
+                                                              FontWeight.bold,
                                                           fontSize: 18.0,
+                                                        ),
+                                                      ),
+                                                      TextSpan(
+                                                        text:
+                                                            'match to those of goats displaying pneumonia symptoms, suggesting a low risk of pneumonia.',
+                                                        style: TextStyle(
                                                           fontWeight:
                                                               FontWeight.normal,
-                                                          useGoogleFonts: false,
+                                                          fontSize: 18.0,
                                                         ),
-                                              ),
-                                              TextSpan(
-                                                text: '4% ',
-                                                style: TextStyle(
-                                                  color: Color(0xFF007C2F),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 18.0,
-                                                ),
-                                              ),
-                                              TextSpan(
-                                                text:
-                                                    'match to those of goats displaying pneumonia symptoms, suggesting a low risk of pneumonia.',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.normal,
-                                                  fontSize: 18.0,
-                                                ),
-                                              )
-                                            ],
-                                            style: FlutterFlowTheme.of(context)
-                                                .bodyMedium,
-                                          ),
-                                          textAlign: TextAlign.justify,
+                                                      )
+                                                    ],
+                                                    style: FlutterFlowTheme.of(
+                                                            context)
+                                                        .bodyMedium,
+                                                  ),
+                                                  textAlign: TextAlign.justify,
+                                                )
+                                              : CircularProgressIndicator(),
                                         ),
                                       ],
                                     ),
@@ -319,8 +401,17 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
                         mainAxisSize: MainAxisSize.max,
                         children: [
                           FFButtonWidget(
-                            onPressed: () {
-                              print('Button pressed ...');
+                            onPressed: () async {
+                              context.pushNamed(
+                                'DiagnosticPhaseOne',
+                                extra: <String, dynamic>{
+                                  kTransitionInfoKey: TransitionInfo(
+                                    hasTransition: true,
+                                    transitionType:
+                                        PageTransitionType.rightToLeft,
+                                  ),
+                                },
+                              );
                             },
                             text: 'Re-Diagnose',
                             icon: Icon(
@@ -398,7 +489,7 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
                 ),
                 Expanded(
                   child: Align(
-                    alignment: AlignmentDirectional(0.0, 1.0),
+                    alignment: AlignmentDirectional(0.0, 0.5),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [

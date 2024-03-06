@@ -1,3 +1,5 @@
+import 'package:pneumosense/methods/fileManagement.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -46,6 +48,9 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late double tempAvg;
   late double oxyAvg;
   final pneumosenseModel = pneumosense.PneumoniaDetector();
+  late bool isVisible;
+  FileManager file = FileManager();
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +63,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
     tempAvgList = [];
     getDiagData();
     processData(isComplete);
+    isVisible = false;
   }
 
   Completer<bool> isComplete = Completer<bool>();
@@ -135,12 +141,18 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
     if (isCompleted == true) {
       await pneumosenseModel.loadModel();
       setState(() {
-        progress = 1.0;
+        progress = 0.7;
         progressMul = progress * 100;
         progressText = progressMul.toStringAsFixed(0);
         tempAvg = connect.getAverage(tempAvgList);
         oxyAvg = connect.getAverage(oxyAvgList);
         pulseAvg = connect.getAverage(pulseAvgList);
+        // tempAvg = 41;
+        // oxyAvg = 40;
+        // pulseAvg = 9;
+        progress = 0.8;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
         print(progress);
         print(tempAvg);
         print(oxyAvg);
@@ -150,12 +162,23 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
         tempAvgList.clear();
         oxyAvgList.clear();
         pulseAvgList.clear();
+        progress = 1.0;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        isVisible = true;
       });
-      await pneumosenseModel.predict(
+      final result = await pneumosenseModel.predict(
           // Call predict inside the callback
           tempAvg: tempAvg,
           pulseAvg: pulseAvg,
           oxyAvg: oxyAvg);
+      file.writeJsonFile(
+          temp: tempAvg,
+          pulse: pulseAvg,
+          oxy: oxyAvg,
+          result: result,
+          date: connect.formattedDate(),
+          time: connect.formattedTime());
     }
   }
 
@@ -328,7 +351,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Getting Average Temperature',
+                              'Please wait while the diagnosis is complete.',
                               style: FlutterFlowTheme.of(context)
                                   .bodyMedium
                                   .override(
@@ -345,38 +368,42 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                 ),
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FFButtonWidget(
-                        onPressed: () async {
-                          context.goNamed('DiagnosticPhaseTwo');
-                        },
-                        text: 'View Results',
-                        options: FFButtonOptions(
-                          height: 40.0,
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              24.0, 0.0, 24.0, 0.0),
-                          iconPadding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 0.0, 0.0, 0.0),
-                          color: Color(0xFFDDDDDD),
-                          textStyle: FlutterFlowTheme.of(context)
-                              .titleSmall
-                              .override(
-                                fontFamily: 'sf pro display',
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                useGoogleFonts: false,
-                              ),
-                          elevation: 3.0,
-                          borderSide: BorderSide(
-                            color: Colors.transparent,
-                            width: 1.0,
+                  child: Visibility(
+                    visible: isVisible,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FFButtonWidget(
+                          onPressed: () async {
+                            context.goNamed('DiagnosticPhaseTwo');
+                          },
+                          text: 'View Results',
+                          options: FFButtonOptions(
+                            height: 40.0,
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                                24.0, 0.0, 24.0, 0.0),
+                            iconPadding: EdgeInsetsDirectional.fromSTEB(
+                                0.0, 0.0, 0.0, 0.0),
+                            color: Color(0xFFDDDDDD),
+                            textStyle: FlutterFlowTheme.of(context)
+                                .titleSmall
+                                .override(
+                                  fontFamily: 'sf pro display',
+                                  color:
+                                      FlutterFlowTheme.of(context).primaryText,
+                                  useGoogleFonts: false,
+                                ),
+                            elevation: 3.0,
+                            borderSide: BorderSide(
+                              color: Colors.transparent,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(18.0),
                           ),
-                          borderRadius: BorderRadius.circular(18.0),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -1,7 +1,10 @@
+import 'dart:ffi';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 import '../pages/home_page/home_page_widget.dart' as homePage;
+import 'package:intl/intl.dart';
 
 var tempVal = '0';
 var oxyVal = '0';
@@ -14,6 +17,7 @@ dynamic progress = 0.0;
 //   _checkConnection();
 //   _startTempUpdateTimer();
 // }
+DateTime now = DateTime.now();
 
 String connectionStatus = 'Not Connected';
 dynamic _temp;
@@ -128,3 +132,39 @@ double getAverage(List<double> value) {
   });
   return average / value.length;
 }
+
+String formattedTime() {
+  String formattedTime = DateFormat('hh:mm:ss a').format(now);
+  return formattedTime;
+}
+
+String formattedDate() {
+  String formattedDate = DateFormat('MMMM dd,yyyy').format(now);
+  return formattedDate;
+}
+
+// Future<void> createDiagLog(
+//     {required double tempAvg,
+//     required double pulseAvg,
+//     required double oxyAvg,
+//     required String result}) async {
+//   final file = File('DiagLog.json');
+//   final jsonData = {
+//     'temp': tempAvg,
+//     'pulse': pulseAvg,
+//     'oxy': oxyAvg,
+//     'result': result,
+//     'date': formattedDate(),
+//     'time': formattedTime()
+//   };
+//   try {
+//     // Encode the data
+//     final jsonAsString = jsonEncode(jsonData);
+
+//     // Open the file in write mode
+//     await file.writeAsString(jsonAsString);
+//     print('JSON data written to file: $file');
+//   } catch (error) {
+//     print('Error writing JSON to file: $error');
+//   }
+// }

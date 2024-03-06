@@ -586,7 +586,7 @@ class _PreventionTipsWidgetState extends State<PreventionTipsWidget> {
                 ),
                 Expanded(
                   child: Align(
-                    alignment: AlignmentDirectional(0.0, 1.0),
+                    // alignment: AlignmentDirectional(0.0, 1.0),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [
