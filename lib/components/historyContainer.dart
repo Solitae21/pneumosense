@@ -7,7 +7,7 @@ class HistoryContainer extends StatefulWidget {
   final String oxy;
   final String date;
   final String time;
-  final double result;
+  final String result;
 
   const HistoryContainer(
       {super.key,
@@ -25,7 +25,7 @@ class HistoryContainer extends StatefulWidget {
 class _HistoryContainer extends State<HistoryContainer> {
   @override
   Widget build(BuildContext context) {
-    return widget.result > 0.5
+    return double.parse(widget.result) > 0.5
         ? Container(
             width: 330,
             height: 103,
@@ -39,8 +39,8 @@ class _HistoryContainer extends State<HistoryContainer> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: 330,
-                      height: 85,
+                      width: 310,
+                      height: 83,
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),
                         borderRadius: BorderRadius.circular(10),
@@ -64,7 +64,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -79,7 +79,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -94,7 +94,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -146,7 +146,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -187,7 +187,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -228,7 +228,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -269,7 +269,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                               color:
                                                   FlutterFlowTheme.of(context)
                                                       .secondary,
-                                              fontSize: 15,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                               useGoogleFonts: false,
                                             ),
@@ -296,7 +296,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                               fontFamily: 'sf pro display',
                               color: Color(0xFFBBAACC),
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               useGoogleFonts: false,
                             ),
@@ -309,7 +309,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                               FlutterFlowTheme.of(context).bodyMedium.override(
                                     fontFamily: 'sf pro display',
                                     color: Color(0xFFBBAACC),
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     useGoogleFonts: false,
                                   ),
@@ -320,7 +320,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                               fontFamily: 'sf pro display',
                               color: Color(0xFFBBAACC),
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               useGoogleFonts: false,
                             ),
@@ -344,8 +344,8 @@ class _HistoryContainer extends State<HistoryContainer> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: 330,
-                      height: 85,
+                      width: 310,
+                      height: 83,
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),
                         borderRadius: BorderRadius.circular(10),
@@ -369,7 +369,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -384,7 +384,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -399,7 +399,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                           .bodyMedium
                                           .override(
                                             fontFamily: 'sf pro display',
-                                            fontSize: 15,
+                                            fontSize: 14,
                                             useGoogleFonts: false,
                                           ),
                                     ),
@@ -451,7 +451,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -492,7 +492,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -533,7 +533,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                                 .bodyMedium
                                                 .override(
                                                   fontFamily: 'sf pro display',
-                                                  fontSize: 15,
+                                                  fontSize: 14,
                                                   useGoogleFonts: false,
                                                 ),
                                           ),
@@ -575,7 +575,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                             .override(
                                               fontFamily: 'sf pro display',
                                               color: Color(0xFF007C2F),
-                                              fontSize: 15,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                               useGoogleFonts: false,
                                             ),
@@ -602,7 +602,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                               fontFamily: 'sf pro display',
                               color: Color(0xFFBBAACC),
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               useGoogleFonts: false,
                             ),
@@ -615,7 +615,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                               FlutterFlowTheme.of(context).bodyMedium.override(
                                     fontFamily: 'sf pro display',
                                     color: Color(0xFFBBAACC),
-                                    fontSize: 15,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     useGoogleFonts: false,
                                   ),
@@ -626,7 +626,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                               fontFamily: 'sf pro display',
                               color: Color(0xFFBBAACC),
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w500,
                               useGoogleFonts: false,
                             ),

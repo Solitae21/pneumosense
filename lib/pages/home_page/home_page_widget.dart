@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pneumosense/components/historyContainer.dart';
+import 'package:pneumosense/methods/getCSV.dart';
 
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -33,6 +36,8 @@ class _HomePageWidgetState extends State<HomePageWidget>
   dynamic tempVal;
   dynamic oxyVal;
   dynamic connectionStatus;
+  dynamic battery;
+  dynamic _battery;
   dynamic _temp;
   dynamic _pulse;
   dynamic _pulseRound;
@@ -43,6 +48,13 @@ class _HomePageWidgetState extends State<HomePageWidget>
   bool _isTimerActive = false;
   late DateTime now;
   late bool isVisible;
+  late ReadCsv myCSV;
+  late List<List<dynamic>> data;
+  final StreamController<String> _timeStreamController =
+      StreamController<String>.broadcast();
+  final StreamController<String> _dateStreamController =
+      StreamController<String>.broadcast();
+  // late List<int> rawBattList;
   // late String formattedTime;
   @override
   void initState() {
@@ -52,11 +64,14 @@ class _HomePageWidgetState extends State<HomePageWidget>
       vsync: this,
       length: 2,
       initialIndex: 0,
-    )..addListener(() => setState(() {}));
+    )..addListener(() {
+        _handleTabSelection;
+      });
     pulseVal = '0';
     tempVal = '0';
     oxyVal = '0';
     connectionStatus = 'Not Connected';
+    data = [];
     now = DateTime.now();
     // Split on space to get date part
     _updateTimer = Timer(Duration.zero, () {});
@@ -65,17 +80,24 @@ class _HomePageWidgetState extends State<HomePageWidget>
     requestStoragePermission();
     WidgetsBinding.instance!.addObserver(this);
     isVisible = false;
+    myCSV = ReadCsv();
+    // myCSV.getCSV();
+    getCSV(true);
+    startListeningToTime();
+    startListeningToDate();
   }
 
   @override
   void dispose() {
     // Remove the observer when the widget is disposed
     WidgetsBinding.instance!.removeObserver(this);
-
+    _model.tabBarController!.dispose();
     // Cancel the timer when the widget is disposed
     _updateTimer.cancel();
     _model.dispose();
     super.dispose();
+    _timeStreamController.close();
+    _dateStreamController.close();
   }
 
   @override
@@ -89,6 +111,30 @@ class _HomePageWidgetState extends State<HomePageWidget>
     } else {
       // App is in a background or inactive state, stop the timer
       _updateTimer.cancel();
+    }
+  }
+
+  Future<void> getCSV(bool connected) async {
+    try {
+      if (connected) {
+        print('getting csv');
+        myCSV.downloadCSVData();
+        setState(() {
+          data = myCSV.data;
+        });
+
+        print(data);
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  void _handleTabSelection() {
+    if (_model.tabBarController!.index == 1) {
+      // Call your function when the second tab is selected
+      print('this is called');
+      // myCSV.fetchCSVData();
     }
   }
 
@@ -109,27 +155,94 @@ class _HomePageWidgetState extends State<HomePageWidget>
     }
   }
 
-  Stream<String> getTimeStream() async* {
+//   void startListeningToTime() {
+//   while (true) {
+//     var now = DateTime.now();
+//     String formattedTime = DateFormat('hh:mm a').format(now);
+//     _timeStreamController.add(formattedTime);
+//     await Future.delayed(Duration(seconds: 1));
+//   }
+// }
+
+  Stream<String> getTimeStream() {
+    return _timeStreamController.stream;
+  }
+
+  void startListeningToTime() async {
     while (true) {
       var now = DateTime.now();
       String formattedTime = DateFormat('hh:mm a')
           .format(now); // Example using string manipulation
-      yield formattedTime;
+      _timeStreamController.add(formattedTime);
       await Future.delayed(
           Duration(seconds: 1)); // Wait 1 second before emitting again
     }
   }
 
-  Stream<String> getDateStream() async* {
+  // Stream<String> getTimeStream() async* {
+  //   while (true) {
+  //     var now = DateTime.now();
+  //     String formattedTime = DateFormat('hh:mm a')
+  //         .format(now); // Example using string manipulation
+  //     yield formattedTime;
+  //     await Future.delayed(
+  //         Duration(seconds: 1)); // Wait 1 second before emitting again
+  //   }
+  // }
+
+  // Stream<String> getDateStream() async* {
+  //   while (true) {
+  //     var now = DateTime.now();
+  //     String formattedDate = DateFormat('MMMM dd,yyyy')
+  //         .format(now); // Example using string manipulation
+  //     yield formattedDate;
+  //     await Future.delayed(
+  //         Duration(seconds: 1)); // Wait 1 second before emitting again
+  //   }
+  // }
+
+  Stream<String> getDateStream() {
+    return _dateStreamController.stream;
+  }
+
+  void startListeningToDate() async {
     while (true) {
       var now = DateTime.now();
       String formattedDate = DateFormat('MMMM dd,yyyy')
           .format(now); // Example using string manipulation
-      yield formattedDate;
+      _dateStreamController.add(formattedDate);
       await Future.delayed(
           Duration(seconds: 1)); // Wait 1 second before emitting again
     }
   }
+
+  // int smoothBatt(int rawBatt) {
+  //   if (rawBattList.length < 5 && !rawBattList.contains(rawBatt)) {
+  //     rawBattList.add(rawBatt);
+  //     return 0;
+  //   } else if (rawBattList.length == 5) {
+  //     rawBattList.sort();
+  //     print(rawBattList);
+  //     if (rawBattList.contains(rawBatt)) {
+  //       print(rawBattList);
+  //       return rawBattList[2];
+  //     } else if (!rawBattList.contains(rawBatt)) {
+  //       if (rawBatt == rawBattList[-1] + 1) {
+  //         rawBattList.removeAt(0);
+  //         rawBattList.add(rawBatt);
+  //       } else if (rawBatt == rawBattList[0] - 1) {
+  //         rawBattList.insert(0, rawBatt);
+  //         rawBattList.removeAt(5);
+  //       }
+  //       print(rawBattList);
+  //       return rawBattList[2];
+  //     }
+  //     print(rawBattList);
+  //     return rawBattList[2];
+  //   }
+  //   print(rawBattList);
+  //   return 0;
+  // }
 
   Future<void> checkConnection() async {
     final String wemosIPAddress =
@@ -153,6 +266,10 @@ class _HomePageWidgetState extends State<HomePageWidget>
           _oxy = jsonData['oxyVal'];
           _oxyRound = _oxy.toStringAsFixed(2);
           _oxy = double.parse(_oxyRound!);
+
+          _battery = jsonData['batVal'];
+          battery = _battery.toStringAsFixed(0);
+          print(battery);
 
           tempVal = _temp.toString();
           print('Temp: $tempVal'); // Debug print
@@ -568,100 +685,12 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                     child: Row(
                                       mainAxisSize: MainAxisSize.max,
                                       children: [
-                                        Column(
-                                          mainAxisSize: MainAxisSize.max,
-                                          children: [
-                                            Container(
-                                              width: 100.0,
-                                              height: 100.0,
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryBackground,
-                                              ),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.max,
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsetsDirectional
-                                                            .fromSTEB(0.0, 0.0,
-                                                                0.0, 10.0),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.max,
-                                                      children: [
-                                                        Text(
-                                                          'Date:',
-                                                          style: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .bodyMedium
-                                                              .override(
-                                                                fontFamily:
-                                                                    'sf pro display',
-                                                                fontSize: 15.0,
-                                                                useGoogleFonts:
-                                                                    false,
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsetsDirectional
-                                                            .fromSTEB(0.0, 0.0,
-                                                                0.0, 10.0),
-                                                    child: Row(
-                                                      mainAxisSize:
-                                                          MainAxisSize.max,
-                                                      children: [
-                                                        Text(
-                                                          'TIme:',
-                                                          style: FlutterFlowTheme
-                                                                  .of(context)
-                                                              .bodyMedium
-                                                              .override(
-                                                                fontFamily:
-                                                                    'sf pro display',
-                                                                fontSize: 15.0,
-                                                                useGoogleFonts:
-                                                                    false,
-                                                              ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.max,
-                                                    children: [
-                                                      Text(
-                                                        'Last Diagnosis:',
-                                                        style: FlutterFlowTheme
-                                                                .of(context)
-                                                            .bodyMedium
-                                                            .override(
-                                                              fontFamily:
-                                                                  'sf pro display',
-                                                              fontSize: 15.0,
-                                                              useGoogleFonts:
-                                                                  false,
-                                                            ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
                                         Expanded(
                                           child: Column(
                                             mainAxisSize: MainAxisSize.max,
                                             children: [
                                               Container(
-                                                width: 197.0,
+                                                width: 100.0,
                                                 height: 100.0,
                                                 decoration: BoxDecoration(
                                                   color: FlutterFlowTheme.of(
@@ -684,37 +713,19 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                         mainAxisSize:
                                                             MainAxisSize.max,
                                                         children: [
-                                                          StreamBuilder<String>(
-                                                            stream:
-                                                                getDateStream(),
-                                                            builder: (context,
-                                                                snapshot) {
-                                                              if (snapshot
-                                                                  .hasData) {
-                                                                return Text(
-                                                                  snapshot
-                                                                      .data!,
-                                                                  style: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .override(
-                                                                        fontFamily:
-                                                                            'sf pro display',
-                                                                        fontSize:
-                                                                            15.0,
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                        useGoogleFonts:
-                                                                            false,
-                                                                      ),
-                                                                );
-                                                              } else if (snapshot
-                                                                  .hasError) {
-                                                                return Text(
-                                                                    'Error: ${snapshot.error}');
-                                                              }
-                                                              return CircularProgressIndicator(); // Show loading indicator initially
-                                                            },
+                                                          Text(
+                                                            'Date:',
+                                                            style: FlutterFlowTheme
+                                                                    .of(context)
+                                                                .bodyMedium
+                                                                .override(
+                                                                  fontFamily:
+                                                                      'sf pro display',
+                                                                  fontSize:
+                                                                      15.0,
+                                                                  useGoogleFonts:
+                                                                      false,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
@@ -731,37 +742,19 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                         mainAxisSize:
                                                             MainAxisSize.max,
                                                         children: [
-                                                          StreamBuilder<String>(
-                                                            stream:
-                                                                getTimeStream(),
-                                                            builder: (context,
-                                                                snapshot) {
-                                                              if (snapshot
-                                                                  .hasData) {
-                                                                return Text(
-                                                                  snapshot
-                                                                      .data!,
-                                                                  style: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .bodyMedium
-                                                                      .override(
-                                                                        fontFamily:
-                                                                            'sf pro display',
-                                                                        fontSize:
-                                                                            15.0,
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                        useGoogleFonts:
-                                                                            false,
-                                                                      ),
-                                                                );
-                                                              } else if (snapshot
-                                                                  .hasError) {
-                                                                return Text(
-                                                                    'Error: ${snapshot.error}');
-                                                              }
-                                                              return CircularProgressIndicator(); // Show loading indicator initially
-                                                            },
+                                                          Text(
+                                                            'TIme:',
+                                                            style: FlutterFlowTheme
+                                                                    .of(context)
+                                                                .bodyMedium
+                                                                .override(
+                                                                  fontFamily:
+                                                                      'sf pro display',
+                                                                  fontSize:
+                                                                      15.0,
+                                                                  useGoogleFonts:
+                                                                      false,
+                                                                ),
                                                           ),
                                                         ],
                                                       ),
@@ -771,7 +764,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                           MainAxisSize.max,
                                                       children: [
                                                         Text(
-                                                          'February 07, 2024 (6:41 AM)',
+                                                          'Last Diagnosis:',
                                                           style: FlutterFlowTheme
                                                                   .of(context)
                                                               .bodyMedium
@@ -779,9 +772,6 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                                 fontFamily:
                                                                     'sf pro display',
                                                                 fontSize: 15.0,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w500,
                                                                 useGoogleFonts:
                                                                     false,
                                                               ),
@@ -794,73 +784,249 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                             ],
                                           ),
                                         ),
+                                        Column(
+                                          mainAxisSize: MainAxisSize.max,
+                                          children: [
+                                            Container(
+                                              width: 197.0,
+                                              height: 100.0,
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    FlutterFlowTheme.of(context)
+                                                        .secondaryBackground,
+                                              ),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsetsDirectional
+                                                            .fromSTEB(0.0, 0.0,
+                                                                0.0, 10.0),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.max,
+                                                      children: [
+                                                        StreamBuilder<String>(
+                                                          stream:
+                                                              getDateStream(),
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            if (snapshot
+                                                                .hasData) {
+                                                              return Text(
+                                                                snapshot.data!,
+                                                                style: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .bodyMedium
+                                                                    .override(
+                                                                      fontFamily:
+                                                                          'sf pro display',
+                                                                      fontSize:
+                                                                          15.0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      useGoogleFonts:
+                                                                          false,
+                                                                    ),
+                                                              );
+                                                            } else if (snapshot
+                                                                .hasError) {
+                                                              return Text(
+                                                                  'Error: ${snapshot.error}');
+                                                            }
+                                                            return CircularProgressIndicator(); // Show loading indicator initially
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsetsDirectional
+                                                            .fromSTEB(0.0, 0.0,
+                                                                0.0, 10.0),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.max,
+                                                      children: [
+                                                        // StreamBuilder<String>(
+                                                        //   stream:
+                                                        //       getTimeStream(),
+                                                        //   builder: (context,
+                                                        //       snapshot) {
+                                                        //     if (snapshot
+                                                        //         .hasData) {
+                                                        //       return Text(
+                                                        //         snapshot.data!,
+                                                        //         style: FlutterFlowTheme.of(
+                                                        //                 context)
+                                                        //             .bodyMedium
+                                                        //             .override(
+                                                        //               fontFamily:
+                                                        //                   'sf pro display',
+                                                        //               fontSize:
+                                                        //                   15.0,
+                                                        //               fontWeight:
+                                                        //                   FontWeight
+                                                        //                       .w500,
+                                                        //               useGoogleFonts:
+                                                        //                   false,
+                                                        //             ),
+                                                        //       );
+                                                        //     } else if (snapshot
+                                                        //         .hasError) {
+                                                        //       return Text(
+                                                        //           'Error: ${snapshot.error}');
+                                                        //     }
+                                                        //     return CircularProgressIndicator(); // Show loading indicator initially
+                                                        //   },
+                                                        // ),
+//                                                         FutureBuilder<List<List<dynamic>>>(
+//   future: myCSV.downloadCSVData();,
+//   builder: (context, snapshot) {
+//     if (snapshot.hasData) {
+//       final data = snapshot.data!;
+//       return ListView.builder(
+//         itemCount: data.length,
+//         itemBuilder: (context, index) {
+//           return HistoryContainer(
+//             temp: data[index][0],
+//             pulse: data[index][1],
+//             oxy: data[index][2],
+//             date: data[index][4],
+//             time: data[index][5],
+//             result: data[index][3],
+//           );
+//         },
+//       );
+//     } else if (snapshot.hasError) {
+//       return Text('Error fetching data: ${snapshot.error}');
+//     }
+//     return Center(child: CircularProgressIndicator());
+//   },
+// ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.max,
+                                                    children: [
+                                                      Text(
+                                                        'February 07, 2024 (6:41 AM)',
+                                                        style: FlutterFlowTheme
+                                                                .of(context)
+                                                            .bodyMedium
+                                                            .override(
+                                                              fontFamily:
+                                                                  'sf pro display',
+                                                              fontSize: 15.0,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              useGoogleFonts:
+                                                                  false,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                   ),
                                   Padding(
                                     padding: EdgeInsetsDirectional.fromSTEB(
                                         0.0, 30.0, 0.0, 0.0),
-                                    child: Visibility(
-                                      visible: isVisible,
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.max,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.max,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        FFButtonWidget(
+                                          onPressed: isVisible
+                                              ? () async {
+                                                  disposeTimer();
+                                                  context.pushNamed(
+                                                    'DiagnosticPhaseOne',
+                                                    extra: <String, dynamic>{
+                                                      kTransitionInfoKey:
+                                                          TransitionInfo(
+                                                        hasTransition: true,
+                                                        transitionType:
+                                                            PageTransitionType
+                                                                .rightToLeft,
+                                                      ),
+                                                    },
+                                                  );
+                                                }
+                                              : null,
+                                          text: 'Take Diagnostic Test',
+                                          options: FFButtonOptions(
+                                            height: 40.0,
+                                            padding:
+                                                EdgeInsetsDirectional.fromSTEB(
+                                                    24.0, 0.0, 24.0, 0.0),
+                                            iconPadding:
+                                                EdgeInsetsDirectional.fromSTEB(
+                                                    0.0, 0.0, 0.0, 0.0),
+                                            color: Color(0xFFDDDDDD),
+                                            textStyle: FlutterFlowTheme.of(
+                                                    context)
+                                                .titleSmall
+                                                .override(
+                                                  fontFamily: 'sf pro display',
+                                                  color: FlutterFlowTheme.of(
+                                                          context)
+                                                      .primaryText,
+                                                  useGoogleFonts: false,
+                                                ),
+                                            elevation: 3.0,
+                                            borderSide: BorderSide(
+                                              color: Colors.transparent,
+                                              width: 1.0,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(22.0),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    children: [
+                                      Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          FFButtonWidget(
-                                            onPressed: () async {
-                                              disposeTimer();
-                                              context.pushNamed(
-                                                'DiagnosticPhaseOne',
-                                                extra: <String, dynamic>{
-                                                  kTransitionInfoKey:
-                                                      TransitionInfo(
-                                                    hasTransition: true,
-                                                    transitionType:
-                                                        PageTransitionType
-                                                            .rightToLeft,
-                                                  ),
-                                                },
-                                              );
-                                            },
-                                            text: 'Take Diagnostic Test',
-                                            options: FFButtonOptions(
-                                              height: 40.0,
-                                              padding: EdgeInsetsDirectional
-                                                  .fromSTEB(
-                                                      24.0, 0.0, 24.0, 0.0),
-                                              iconPadding: EdgeInsetsDirectional
-                                                  .fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                              color: Color(0xFFDDDDDD),
-                                              textStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .titleSmall
-                                                      .override(
-                                                        fontFamily:
-                                                            'sf pro display',
-                                                        color:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .primaryText,
-                                                        useGoogleFonts: false,
-                                                      ),
-                                              elevation: 3.0,
-                                              borderSide: BorderSide(
-                                                color: Colors.transparent,
-                                                width: 1.0,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(22.0),
-                                            ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(10.0),
+                                            child: Text(
+                                                'Connection Status: ${connectionStatus}'),
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(10.0),
-                                    child: Text(
-                                        'Connection Status: ${connectionStatus}'),
+                                      Visibility(
+                                        visible: isVisible,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(10.0),
+                                              child: Text(
+                                                  'Battery Percentage: ${battery}%'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -875,13 +1041,66 @@ class _HomePageWidgetState extends State<HomePageWidget>
                             //         useGoogleFonts: false,
                             //       ),
                             // ),
-                            HistoryContainer(
-                                temp: '76',
-                                pulse: '76',
-                                oxy: '76',
-                                date: 'February 07, 2024',
-                                time: ' 9:41 AM',
-                                result: 0.5),
+                            // HistoryContainer(
+                            //     temp: '76',
+                            //     pulse: '76',
+                            //     oxy: '76',
+                            //     date: 'February 07, 2024',
+                            //     time: ' 9:41 AM',
+                            //     result: 0.5),
+                            // Padding(
+                            //   padding: EdgeInsetsDirectional.all(10.0),
+                            //   child: Expanded(
+                            //       child: ListView.builder(
+                            //           itemCount: myCSV.data.length,
+                            //           itemBuilder: (context, int index) {
+                            //             return HistoryContainer(
+                            //                 temp: myCSV.data[index][0],
+                            //                 pulse: myCSV.date[index][1],
+                            //                 oxy: myCSV.date[index][2],
+                            //                 date: myCSV.date[index][4],
+                            //                 time: myCSV.date[index][5],
+                            //                 result: myCSV.date[index][3]);
+                            //           })),
+                            // )
+                            Padding(
+                              padding: const EdgeInsetsDirectional.all(10.0),
+                              child: Column(
+                                children: [
+                                  data.isEmpty ==
+                                          true // Check if data is loaded
+                                      ? const Center(
+                                          child:
+                                              CircularProgressIndicator()) // Show loading indicator
+                                      : Column(
+                                          children: [
+                                            ListView.builder(
+                                              itemCount: data.length,
+                                              itemBuilder:
+                                                  (context, int index) {
+                                                return HistoryContainer(
+                                                  temp: data[index][0],
+                                                  pulse: data[index][1],
+                                                  oxy: data[index][2],
+                                                  date: data[index][4],
+                                                  time: data[index][5],
+                                                  result: data[index][3],
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                  // : HistoryContainer(
+                                  //     temp: data[0][0],
+                                  //     pulse: data[0][1],
+                                  //     oxy: data[0][2],
+                                  //     date: data[0][4],
+                                  //     time: data[0][5],
+                                  //     result: '0.7',
+                                  //   )
+                                ],
+                              ),
+                            )
                           ],
                         ),
                       ),
