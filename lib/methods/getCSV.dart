@@ -34,7 +34,7 @@ class ReadCsv {
     });
   }
 
-  Future<void> downloadCSVData() async {
+  Future<List<List<dynamic>>> downloadCSVData() async {
     final String wemosIPAddress = '192.168.4.1';
     String url =
         "http://${wemosIPAddress}/history"; // Replace with your Wemos' IP address
@@ -45,7 +45,7 @@ class ReadCsv {
         String csvData = response.body;
         // final prefs = await SharedPreferences.getInstance();
         // await prefs.setString('csvData', csvData);
-        print(csvData);
+        // print(csvData);
         if (csvData.isNotEmpty) {
           // Split the CSV data into lines (rows)
           List<String> csvLines = csvData.split('\n');
@@ -82,23 +82,31 @@ class ReadCsv {
               data.add(rowData);
 
               // Example processing: Print data points from the list
-              print(data);
-              print('---');
+              // print(data);
+              // print('---');
+              // return data;
               // Update UI or perform further processing with these values
             } else {
               // Handle case where data is not in expected format (e.g., log an error)
+              return data;
             }
           }
         }
 
         print('Successul CSV Access');
+        print(data);
+        print('---');
+        return data;
         // Show success message or handle download completion
       } else {
         // Handle error fetching data
+        return data;
       }
     } catch (e) {
       // Handle exception during HTTP request
+      return data;
     }
+    return data;
   }
 
   Future<String> _getSavedCSVData() async {
@@ -163,7 +171,7 @@ class ReadCsv {
     print('processing');
   }
 
-  Future<void> fetchCSVData() async {
+  Future<List<List<dynamic>>> fetchCSVData() async {
     List<List<dynamic>> csvData;
     final String wemosIPAddress = '192.168.4.1';
     String url =
@@ -171,24 +179,27 @@ class ReadCsv {
     try {
       var response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        await _saveFile(response.bodyBytes);
+        // await _saveFile(response.bodyBytes);
         print('Downloaded File Successfully');
-        Directory? directory = await getExternalStorageDirectory();
-        final File file = File('${directory!.path}/history.csv');
-        final String contents = await file.readAsString();
-        csvData = const CsvToListConverter().convert(contents);
-        print(contents);
+        // Directory? directory = await getExternalStorageDirectory();
+        // final File file = File('${directory!.path}/history.csv');
+        // final String contents = await file.readAsString();
+        csvData = const CsvToListConverter().convert(response.body);
+        // print(contents);
         print(csvData);
         print('CSV Loaded Successfully');
         // Process the received CSV data (replace with your parsing logic)
         data = csvData;
+        return data;
       } else {
         print('Unable to get CSV');
+        return data;
         // Handle error fetching data
       }
     } catch (e) {
       // Handle exception during HTTP request
       print('Unable to get CSV');
+      return data;
     }
   }
 }

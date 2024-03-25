@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:pneumosense/methods/fileManagement.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../pages/home_page/home_page_widget.dart' as homePage;
@@ -61,6 +62,30 @@ void startTempUpdateTimer() {
   Timer.periodic(updateInterval, (Timer timer) async {
     await checkConnection(); // Update temperature periodically
   });
+}
+
+Future<void> sendDiagDataToWemos() async {
+  // Read the JSON file from assets
+  final diagLog = await FileManager().readJsonFile();
+  print(diagLog);
+  String jsonData = jsonEncode(diagLog);
+  try {
+    final response = await http.post(
+      Uri.parse('http://${wemosIPAddress}/data'),
+      body: jsonData,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    // Handle response (success or error)
+    if (response.statusCode == 200) {
+      print('Data sent successfully!');
+    } else {
+      print('Error sending data: ${response.statusCode}');
+    }
+  } catch (e) {
+    print(e);
+  }
+  // Send data to Wemos server using http.post
 }
 
 void sendInstruction() async {

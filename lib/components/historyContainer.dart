@@ -39,7 +39,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: 310,
+                      width: 330,
                       height: 83,
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),
@@ -344,7 +344,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Container(
-                      width: 310,
+                      width: 330,
                       height: 83,
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),

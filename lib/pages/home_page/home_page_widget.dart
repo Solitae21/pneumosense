@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pneumosense/components/freshTab.dart';
 import 'package:pneumosense/components/historyContainer.dart';
 import 'package:pneumosense/methods/getCSV.dart';
 
@@ -49,7 +50,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
   late DateTime now;
   late bool isVisible;
   late ReadCsv myCSV;
-  late List<List<dynamic>> data;
+  late List<List<dynamic>> _data;
+  bool _isFetchingData = false;
+  late Future<List<List<dynamic>>> _dataFuture;
   final StreamController<String> _timeStreamController =
       StreamController<String>.broadcast();
   final StreamController<String> _dateStreamController =
@@ -62,7 +65,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
     _model = createModel(context, () => HomePageModel());
     _model.tabBarController = TabController(
       vsync: this,
-      length: 2,
+      length: 3,
       initialIndex: 0,
     )..addListener(() {
         _handleTabSelection;
@@ -71,7 +74,6 @@ class _HomePageWidgetState extends State<HomePageWidget>
     tempVal = '0';
     oxyVal = '0';
     connectionStatus = 'Not Connected';
-    data = [];
     now = DateTime.now();
     // Split on space to get date part
     _updateTimer = Timer(Duration.zero, () {});
@@ -82,9 +84,11 @@ class _HomePageWidgetState extends State<HomePageWidget>
     isVisible = false;
     myCSV = ReadCsv();
     // myCSV.getCSV();
-    getCSV(true);
+    // getCSV(true);
     startListeningToTime();
     startListeningToDate();
+    // _dataFuture = myCSV.downloadCSVData();
+    // getCSV(isVisible);
   }
 
   @override
@@ -120,10 +124,10 @@ class _HomePageWidgetState extends State<HomePageWidget>
         print('getting csv');
         myCSV.downloadCSVData();
         setState(() {
-          data = myCSV.data;
+          _data = myCSV.data;
         });
 
-        print(data);
+        print(_data);
       }
     } catch (e) {
       print(e);
@@ -200,6 +204,19 @@ class _HomePageWidgetState extends State<HomePageWidget>
   //         Duration(seconds: 1)); // Wait 1 second before emitting again
   //   }
   // }
+
+  Future<List<List<dynamic>>> getFreshCSVData() async {
+    // You can implement a flag or timestamp logic here
+    // For example, a flag set to true when the tab is switched
+    bool needsRefresh = true; // Replace with your refresh logic
+
+    if (needsRefresh) {
+      return myCSV.downloadCSVData();
+    } else {
+      throw Exception(
+          'No refresh needed'); // Or return cached data if available
+    }
+  }
 
   Stream<String> getDateStream() {
     return _dateStreamController.stream;
@@ -281,7 +298,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
       } else {
         setState(() {
           isVisible = false;
-          connectionStatus = 'Not Connected to Wemos D1 Mini';
+          connectionStatus = 'Not Connected';
           tempVal = '0';
           oxyVal = '0';
           pulseVal = '0';
@@ -290,7 +307,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
     } catch (e) {
       setState(() {
         isVisible = false;
-        connectionStatus = 'Error: $e';
+        connectionStatus = '$e';
         tempVal = '0';
         oxyVal = '0';
         pulseVal = '0';
@@ -386,6 +403,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
                             ),
                             Tab(
                               text: 'History',
+                            ),
+                            Tab(
+                              text: 'Alerts',
                             ),
                           ],
                           controller: _model.tabBarController,
@@ -836,7 +856,14 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                               return Text(
                                                                   'Error: ${snapshot.error}');
                                                             }
-                                                            return CircularProgressIndicator(); // Show loading indicator initially
+                                                            return Expanded(
+                                                                child: Row(
+                                                              children: [
+                                                                Text(
+                                                                    'Fetching Date')
+                                                              ],
+                                                            ));
+                                                            ; // Show loading indicator initially
                                                           },
                                                         ),
                                                       ],
@@ -851,62 +878,44 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                       mainAxisSize:
                                                           MainAxisSize.max,
                                                       children: [
-                                                        // StreamBuilder<String>(
-                                                        //   stream:
-                                                        //       getTimeStream(),
-                                                        //   builder: (context,
-                                                        //       snapshot) {
-                                                        //     if (snapshot
-                                                        //         .hasData) {
-                                                        //       return Text(
-                                                        //         snapshot.data!,
-                                                        //         style: FlutterFlowTheme.of(
-                                                        //                 context)
-                                                        //             .bodyMedium
-                                                        //             .override(
-                                                        //               fontFamily:
-                                                        //                   'sf pro display',
-                                                        //               fontSize:
-                                                        //                   15.0,
-                                                        //               fontWeight:
-                                                        //                   FontWeight
-                                                        //                       .w500,
-                                                        //               useGoogleFonts:
-                                                        //                   false,
-                                                        //             ),
-                                                        //       );
-                                                        //     } else if (snapshot
-                                                        //         .hasError) {
-                                                        //       return Text(
-                                                        //           'Error: ${snapshot.error}');
-                                                        //     }
-                                                        //     return CircularProgressIndicator(); // Show loading indicator initially
-                                                        //   },
-                                                        // ),
-//                                                         FutureBuilder<List<List<dynamic>>>(
-//   future: myCSV.downloadCSVData();,
-//   builder: (context, snapshot) {
-//     if (snapshot.hasData) {
-//       final data = snapshot.data!;
-//       return ListView.builder(
-//         itemCount: data.length,
-//         itemBuilder: (context, index) {
-//           return HistoryContainer(
-//             temp: data[index][0],
-//             pulse: data[index][1],
-//             oxy: data[index][2],
-//             date: data[index][4],
-//             time: data[index][5],
-//             result: data[index][3],
-//           );
-//         },
-//       );
-//     } else if (snapshot.hasError) {
-//       return Text('Error fetching data: ${snapshot.error}');
-//     }
-//     return Center(child: CircularProgressIndicator());
-//   },
-// ),
+                                                        StreamBuilder<String>(
+                                                          stream:
+                                                              getTimeStream(),
+                                                          builder: (context,
+                                                              snapshot) {
+                                                            if (snapshot
+                                                                .hasData) {
+                                                              return Text(
+                                                                snapshot.data!,
+                                                                style: FlutterFlowTheme.of(
+                                                                        context)
+                                                                    .bodyMedium
+                                                                    .override(
+                                                                      fontFamily:
+                                                                          'sf pro display',
+                                                                      fontSize:
+                                                                          15.0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                      useGoogleFonts:
+                                                                          false,
+                                                                    ),
+                                                              );
+                                                            } else if (snapshot
+                                                                .hasError) {
+                                                              return Text(
+                                                                  'Error: ${snapshot.error}');
+                                                            }
+                                                            return Expanded(
+                                                                child: Row(
+                                                              children: [
+                                                                Text(
+                                                                    'Fetching Time')
+                                                              ],
+                                                            )); // Show loading indicator initially
+                                                          },
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -998,22 +1007,10 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                       ],
                                     ),
                                   ),
-                                  Column(
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(10.0),
-                                            child: Text(
-                                                'Connection Status: ${connectionStatus}'),
-                                          ),
-                                        ],
-                                      ),
-                                      Visibility(
-                                        visible: isVisible,
-                                        child: Row(
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
@@ -1021,12 +1018,27 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                               padding:
                                                   const EdgeInsets.all(10.0),
                                               child: Text(
-                                                  'Battery Percentage: ${battery}%'),
+                                                  'Connection Status: ${connectionStatus}'),
                                             ),
                                           ],
                                         ),
-                                      ),
-                                    ],
+                                        Visibility(
+                                          visible: isVisible,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.all(10.0),
+                                                child: Text(
+                                                    'Battery Percentage: ${battery}%'),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1063,44 +1075,53 @@ class _HomePageWidgetState extends State<HomePageWidget>
                             //                 result: myCSV.date[index][3]);
                             //           })),
                             // )
-                            Padding(
-                              padding: const EdgeInsetsDirectional.all(10.0),
-                              child: Column(
-                                children: [
-                                  data.isEmpty ==
-                                          true // Check if data is loaded
-                                      ? const Center(
-                                          child:
-                                              CircularProgressIndicator()) // Show loading indicator
-                                      : Column(
-                                          children: [
-                                            ListView.builder(
-                                              itemCount: data.length,
-                                              itemBuilder:
-                                                  (context, int index) {
-                                                return HistoryContainer(
-                                                  temp: data[index][0],
-                                                  pulse: data[index][1],
-                                                  oxy: data[index][2],
-                                                  date: data[index][4],
-                                                  time: data[index][5],
-                                                  result: data[index][3],
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                  // : HistoryContainer(
-                                  //     temp: data[0][0],
-                                  //     pulse: data[0][1],
-                                  //     oxy: data[0][2],
-                                  //     date: data[0][4],
-                                  //     time: data[0][5],
-                                  //     result: '0.7',
-                                  //   )
-                                ],
-                              ),
-                            )
+                            FutureBuilder<List<List<dynamic>>>(
+                              future: _isFetchingData
+                                  ? null
+                                  : myCSV.downloadCSVData(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  _isFetchingData =
+                                      true; // Set flag while fetching
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                } else if (snapshot.hasData) {
+                                  List<List<dynamic>> data = snapshot.data!;
+                                  _isFetchingData = false;
+                                  return ListView.builder(
+                                    itemCount: data.length,
+                                    itemBuilder: (context, index) {
+                                      return HistoryContainer(
+                                        temp: data[index][0],
+                                        pulse: data[index][1],
+                                        oxy: data[index][2],
+                                        date: data[index][4],
+                                        time: data[index][5],
+                                        result: data[index][3],
+                                      );
+                                      //     Row(
+                                      //   children: [
+                                      //     Text(data[index][0]),
+                                      //     Text(data[index][1]),
+                                      //     Text(data[index][2]),
+                                      //     Text(data[index][3]),
+                                      //     Text(data[index][4]),
+                                      //     Text(data[index][5]),
+                                      //   ],
+                                      // );
+                                    },
+                                  );
+                                  // Text('$data');
+                                } else if (snapshot.hasError) {
+                                  return Text(
+                                      'Error fetching data: ${snapshot.error}');
+                                }
+                                return Center(
+                                    child: CircularProgressIndicator());
+                              },
+                            ),
+                            Text('tab3'),
                           ],
                         ),
                       ),

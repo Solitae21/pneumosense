@@ -376,6 +376,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                       children: [
                         FFButtonWidget(
                           onPressed: () async {
+                            connect.sendDiagDataToWemos();
                             context.goNamed('DiagnosticPhaseTwo');
                           },
                           text: 'View Results',
