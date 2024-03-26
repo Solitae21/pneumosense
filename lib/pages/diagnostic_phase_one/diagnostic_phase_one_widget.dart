@@ -50,6 +50,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   final pneumosenseModel = pneumosense.PneumoniaDetector();
   late bool isVisible;
   FileManager file = FileManager();
+  DateTime now = DateTime.now();
 
   @override
   void initState() {
@@ -177,8 +178,8 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
           pulse: pulseAvg,
           oxy: oxyAvg,
           result: result,
-          date: connect.formattedDate(),
-          time: connect.formattedTime());
+          date: DateFormat('MMMM dd,yyyy').format(now),
+          time: DateFormat('hh:mm:ss a').format(now));
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pneumosense/components/alertContainer.dart';
 import 'package:pneumosense/components/freshTab.dart';
 import 'package:pneumosense/components/historyContainer.dart';
 import 'package:pneumosense/methods/getCSV.dart';
@@ -52,7 +53,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
   late ReadCsv myCSV;
   late List<List<dynamic>> _data;
   bool _isFetchingData = false;
-  late Future<List<List<dynamic>>> _dataFuture;
+  Future<List<List<dynamic>>>? _dataFuture;
+  Future<List<List<dynamic>>>? _alertDataFutureHandler;
+  Future<List<List<dynamic>>>? _alertData;
   final StreamController<String> _timeStreamController =
       StreamController<String>.broadcast();
   final StreamController<String> _dateStreamController =
@@ -88,7 +91,8 @@ class _HomePageWidgetState extends State<HomePageWidget>
     startListeningToTime();
     startListeningToDate();
     // _dataFuture = myCSV.downloadCSVData();
-    // getCSV(isVisible);
+    CSVTimer();
+    alertCSVTimer();
   }
 
   @override
@@ -118,16 +122,66 @@ class _HomePageWidgetState extends State<HomePageWidget>
     }
   }
 
+  void CSVTimer() {
+    if (!isVisible) {
+      Timer.periodic(Duration(seconds: 1), (timer) async {
+        await getCSV(isVisible);
+        if (isVisible) {
+          timer.cancel();
+        }
+      });
+    }
+  }
+
+  void alertCSVTimer() {
+    if (!isVisible) {
+      Timer.periodic(Duration(seconds: 1), (timer) async {
+        await getAlertCSV(isVisible);
+        // if (isVisible) {
+        //   timer.cancel();
+        // }
+      });
+    }
+  }
+
   Future<void> getCSV(bool connected) async {
     try {
       if (connected) {
         print('getting csv');
-        myCSV.downloadCSVData();
-        setState(() {
-          _data = myCSV.data;
-        });
+        _dataFuture = myCSV.downloadCSVData();
+        // _alertData = myCSV.alertCSVData();
 
-        print(_data);
+        // print(_data);
+      } else {
+        print('not yet connected');
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> getAlertCSV(bool connected) async {
+    try {
+      if (connected) {
+        print('getting alert csv');
+        List<List<dynamic>>? newAlertData = await myCSV.alertCSVData();
+
+        if (newAlertData != null && newAlertData.isNotEmpty) {
+          final List<List<dynamic>>? currentData = await _alertData;
+          if (currentData == null ||
+              newAlertData.length != currentData.length) {
+            setState(() {
+              _alertData = Future.value(newAlertData);
+              print('alert data updated');
+            });
+          } else {
+            print('alert data is still up to date');
+          }
+        } else {
+          print('alert data is empty or null');
+        }
+      } else {
+        print('alert data not received');
       }
     } catch (e) {
       print(e);
@@ -293,7 +347,8 @@ class _HomePageWidgetState extends State<HomePageWidget>
           oxyVal = _oxy.toString();
           print('Oxygen: $oxyVal'); // Debug print
           pulseVal = _pulse.toString();
-          print('Pulse: $pulseVal'); // Debug print
+          print('Pulse: $pulseVal');
+          // Debug print
         });
       } else {
         setState(() {
@@ -763,7 +818,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                             MainAxisSize.max,
                                                         children: [
                                                           Text(
-                                                            'TIme:',
+                                                            'Time:',
                                                             style: FlutterFlowTheme
                                                                     .of(context)
                                                                 .bodyMedium
@@ -1076,18 +1131,16 @@ class _HomePageWidgetState extends State<HomePageWidget>
                             //           })),
                             // )
                             FutureBuilder<List<List<dynamic>>>(
-                              future: _isFetchingData
-                                  ? null
-                                  : myCSV.downloadCSVData(),
+                              future: _dataFuture,
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
-                                  _isFetchingData =
-                                      true; // Set flag while fetching
+                                  // _isFetchingData =
+                                  //     true; // Set flag while fetching
                                   return Center(
                                       child: CircularProgressIndicator());
                                 } else if (snapshot.hasData) {
-                                  List<List<dynamic>> data = snapshot.data!;
+                                  final data = snapshot.data!;
                                   _isFetchingData = false;
                                   return ListView.builder(
                                     itemCount: data.length,
@@ -1116,12 +1169,45 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                 } else if (snapshot.hasError) {
                                   return Text(
                                       'Error fetching data: ${snapshot.error}');
+                                } else {
+                                  return Center(
+                                      child: CircularProgressIndicator());
                                 }
-                                return Center(
-                                    child: CircularProgressIndicator());
                               },
                             ),
-                            Text('tab3'),
+                            FutureBuilder<List<List<dynamic>>>(
+                              future: _alertData,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  // _isFetchingData =
+                                  //     true; // Set flag while fetching
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                } else if (snapshot.hasData) {
+                                  final data = snapshot.data!;
+                                  _isFetchingData = false;
+                                  return ListView.builder(
+                                    itemCount: data.length,
+                                    itemBuilder: (context, index) {
+                                      return AlertWidget(
+                                          alert: data[index][0],
+                                          value: data[index][1],
+                                          intensity: data[index][2],
+                                          date: data[index][3],
+                                          time: data[index][4]);
+                                    },
+                                  );
+                                  // Text('$data');
+                                } else if (snapshot.hasError) {
+                                  return Text(
+                                      'Error fetching data: ${snapshot.error}');
+                                } else {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                }
+                              },
+                            )
                           ],
                         ),
                       ),

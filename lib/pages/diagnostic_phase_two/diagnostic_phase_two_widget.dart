@@ -13,6 +13,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'diagnostic_phase_two_model.dart';
 export 'diagnostic_phase_two_model.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class DiagnosticPhaseTwoWidget extends StatefulWidget {
   const DiagnosticPhaseTwoWidget({super.key});
@@ -44,8 +47,20 @@ class _DiagnosticPhaseTwoWidgetState extends State<DiagnosticPhaseTwoWidget> {
       double.parse(result) > 0.5 ? isPneumonia = true : isNormal = true;
 
   Future<void> getResult() async {
+    // final String wemosIPAddress = '192.168.4.1';
     try {
       final diagLog = await FileManager().readJsonFile();
+      // String jsonData = jsonEncode(diagLog);
+      // final response = await http.post(
+      //   Uri.parse('http://${wemosIPAddress}/data'),
+      //   body: jsonData,
+      //   headers: {'Content-Type': 'application/json'},
+      // );
+      // if (response.statusCode == 200) {
+      //   print('Data sent successfully!');
+      // } else {
+      //   print('Error sending data: ${response.statusCode}');
+      // }
       setState(() {
         result = diagLog!["result"];
         print(result);

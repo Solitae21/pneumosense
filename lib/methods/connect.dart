@@ -66,10 +66,10 @@ void startTempUpdateTimer() {
 
 Future<void> sendDiagDataToWemos() async {
   // Read the JSON file from assets
-  final diagLog = await FileManager().readJsonFile();
-  print(diagLog);
-  String jsonData = jsonEncode(diagLog);
   try {
+    final diagLog = await FileManager().readJsonFile();
+    print(diagLog);
+    String jsonData = jsonEncode(diagLog);
     final response = await http.post(
       Uri.parse('http://${wemosIPAddress}/data'),
       body: jsonData,
