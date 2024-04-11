@@ -1,7 +1,12 @@
+import 'dart:ffi';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:pneumosense/methods/fileManagement.dart';
 import 'dart:async';
 import 'dart:convert';
 import '../pages/home_page/home_page_widget.dart' as homePage;
+import 'package:intl/intl.dart';
+import 'package:csv/csv.dart';
 
 var tempVal = '0';
 var oxyVal = '0';
@@ -14,6 +19,7 @@ dynamic progress = 0.0;
 //   _checkConnection();
 //   _startTempUpdateTimer();
 // }
+DateTime now = DateTime.now();
 
 String connectionStatus = 'Not Connected';
 dynamic _temp;
@@ -58,6 +64,30 @@ void startTempUpdateTimer() {
   });
 }
 
+Future<void> sendDiagDataToWemos() async {
+  // Read the JSON file from assets
+  try {
+    final diagLog = await FileManager().readJsonFile();
+    print(diagLog);
+    String jsonData = jsonEncode(diagLog);
+    final response = await http.post(
+      Uri.parse('http://${wemosIPAddress}/data'),
+      body: jsonData,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    // Handle response (success or error)
+    if (response.statusCode == 200) {
+      print('Data sent successfully!');
+    } else {
+      print('Error sending data: ${response.statusCode}');
+    }
+  } catch (e) {
+    print(e);
+  }
+  // Send data to Wemos server using http.post
+}
+
 void sendInstruction() async {
   final response = await http.post(
     Uri.parse('http://${wemosIPAddress}/endpoint'),
@@ -79,18 +109,21 @@ void sendInstruction() async {
   }
 }
 
-Future<void> resetProgress() async {
+Future<int> resetProgress() async {
   try {
     final response = await http.get(Uri.http(wemosIPAddress, '/reset'));
 
     if (response.statusCode == 200) {
       print('Progress reset successfully');
+      return 200;
       // You can add any additional actions here after the reset
     } else {
       print('Failed to reset progress. Status code: ${response.statusCode}');
+      return 0;
     }
   } catch (error) {
     print('Error: $error');
+    return 0;
   }
 }
 
@@ -117,3 +150,49 @@ void startDiagnosticTimer(Function updateProgress) {
     await getData(); // Update temperature periodically
   });
 }
+
+double getAverage(List<double> value) {
+  double average = 0;
+  value.forEach((element) {
+    average = average + element;
+  });
+  return average / value.length;
+}
+
+String formattedTime() {
+  String formattedTime = DateFormat('hh:mm:ss a').format(now);
+  return formattedTime;
+}
+
+String formattedDate() {
+  String formattedDate = DateFormat('MMMM dd,yyyy').format(now);
+  return formattedDate;
+}
+
+// Future<void> createDiagLog(
+//     {required double tempAvg,
+//     required double pulseAvg,
+//     required double oxyAvg,
+//     required String result}) async {
+//   final file = File('DiagLog.json');
+//   final jsonData = {
+//     'temp': tempAvg,
+//     'pulse': pulseAvg,
+//     'oxy': oxyAvg,
+//     'result': result,
+//     'date': formattedDate(),
+//     'time': formattedTime()
+//   };
+//   try {
+//     // Encode the data
+//     final jsonAsString = jsonEncode(jsonData);
+
+//     // Open the file in write mode
+//     await file.writeAsString(jsonAsString);
+//     print('JSON data written to file: $file');
+//   } catch (error) {
+//     print('Error writing JSON to file: $error');
+//   }
+// }
+
+

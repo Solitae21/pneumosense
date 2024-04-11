@@ -42,7 +42,7 @@ dependencies:
   path_provider_platform_interface: 2.0.6
   percent_indicator: 4.2.2
   provider: 6.0.5
-  shared_preferences: 2.2.2
+  shared_preferences: ^2.2.2
   shared_preferences_android: 2.2.1
   shared_preferences_foundation: 2.3.4
   shared_preferences_platform_interface: 2.3.1
@@ -55,9 +55,13 @@ dependencies:
   url_launcher_platform_interface: 2.1.2
   http: ^0.13.3
 
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.0
+  tflite_flutter: ^0.10.4
+  permission_handler: ^11.3.0
+  csv: ^6.0.0
 
 dev_dependencies:
   flutter_lints: 3.0.0
@@ -87,6 +91,9 @@ flutter:
     - assets/lottie_animations/
     - assets/rive_animations/
     - assets/pdfs/
+    - assets/converted_pneumosensemodel2.tflite
+    - assets/labels.txt
+    - assets/json/
   fonts:
     - family: 'sf pro display'
       fonts:

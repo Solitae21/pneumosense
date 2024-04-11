@@ -1,3 +1,5 @@
+import 'package:pneumosense/methods/fileManagement.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -12,10 +14,19 @@ import '../../methods/connect.dart' as connect;
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
+import '../../methods/learning_model.dart' as pneumosense;
 
 class DiagnosticPhaseOneWidget extends StatefulWidget {
-  const DiagnosticPhaseOneWidget({super.key});
+  const DiagnosticPhaseOneWidget({
+    super.key,
+    required this.calibrateTemp,
+    required this.calibrateBpm,
+    required this.calibrateOxy,
+  });
 
+  final double? calibrateTemp;
+  final double? calibrateBpm;
+  final double? calibrateOxy;
   @override
   State<DiagnosticPhaseOneWidget> createState() =>
       _DiagnosticPhaseOneWidgetState();
@@ -25,48 +36,227 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late DiagnosticPhaseOneModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  dynamic progress = 0.0;
+  double progress = 0.0;
   dynamic connectionStatus;
+  dynamic pulseVal;
+  dynamic tempVal;
+  dynamic oxyVal;
+  dynamic _temp;
+  dynamic _pulse;
+  dynamic _pulseRound;
+  dynamic _oxy;
+  dynamic _oxyRound;
+  String? _toRound;
+  var progressText;
+  late double progressMul;
+  late List<double> pulseAvgList;
+  late List<double> oxyAvgList;
+  late List<double> tempAvgList;
+  late double _calibrateTemp;
+  late double _calibrateBpm;
+  late double _calibrateOxy;
+  late double pulseAvg;
+  late double tempAvg;
+  late double oxyAvg;
+  final pneumosenseModel = pneumosense.PneumoniaDetector();
+  late bool isVisible;
+  FileManager file = FileManager();
+  DateTime now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => DiagnosticPhaseOneModel());
-    getData();
-    startDiagnosticTimer();
+    progress = 0.0;
+    progressText = '0';
+    progressMul = 0.00;
+    pulseAvgList = [];
+    oxyAvgList = [];
+    tempAvgList = [];
+    _calibrateTemp = widget.calibrateTemp!;
+    _calibrateBpm = widget.calibrateBpm!;
+    _calibrateOxy = widget.calibrateOxy!;
+    getDiagData();
+    processData(isComplete);
+    isVisible = false;
   }
 
-  Future<void> getData() async {
+  Completer<bool> isComplete = Completer<bool>();
+
+  Future<void> getValues(bool isCompleted) async {
     final String wemosIPAddress =
         '192.168.4.1'; // Replace with your Wemos D1 Mini IP address
-    try {
-      final response =
-          await http.get(Uri.parse('http://$wemosIPAddress/getData'));
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
+    if (isCompleted == false) {
+      try {
+        final response = await http.get(Uri.parse('http://$wemosIPAddress/'));
+        if (response.statusCode == 200) {
+          final jsonData = json.decode(response.body);
+          setState(() {
+            connectionStatus = 'Connected';
+            _temp = jsonData['tempVal'];
+            _toRound = _temp.toStringAsFixed(2);
+            _temp = double.parse(_toRound!) + _calibrateTemp;
+
+            _pulse = jsonData['pulseVal'];
+            _pulseRound = _pulse.toStringAsFixed(2);
+            _pulse = double.parse(_pulseRound!) + _calibrateBpm;
+
+            _oxy = jsonData['oxyVal'];
+            _oxyRound = _oxy.toStringAsFixed(2);
+            _oxy = double.parse(_oxyRound!) + _calibrateOxy;
+
+            // tempVal = _temp.toString();
+            // print('Temp: $tempVal'); // Debug print
+            // oxyVal = _oxy.toString();
+            // print('Oxygen: $oxyVal'); // Debug print
+            // pulseVal = _pulse.toString();
+            // print('Pulse: $pulseVal'); // Debug print
+            if (progress < 0.6) {
+              tempAvgList.add(jsonData['tempVal'] + _calibrateTemp);
+              pulseAvgList.add(jsonData['pulseVal'] + _calibrateBpm);
+              oxyAvgList.add(jsonData['oxyVal'] + _calibrateOxy);
+              progress = progress + 0.01;
+              progressMul = progress * 100;
+              progressText = progressMul.toStringAsFixed(0);
+              print(tempAvgList);
+              print(oxyAvgList);
+              print(pulseAvgList);
+              print(progress);
+            }
+          });
+        } else {
+          setState(() {
+            connectionStatus = 'Not Connected to Wemos D1 Mini';
+            tempVal = '0';
+            oxyVal = '0';
+            pulseVal = '0';
+          });
+        }
+      } catch (e) {
         setState(() {
-          progress = jsonData['progress'];
+          connectionStatus = 'Error: $e';
+          tempVal = '0';
+          oxyVal = '0';
+          pulseVal = '0';
         });
-      } else {
-        connectionStatus = 'Not Connected to Wemos D1 Mini';
       }
-    } catch (e) {
-      connectionStatus = 'Error: $e';
     }
   }
 
-  void startDiagnosticTimer() {
-    const Duration updateInterval = Duration(seconds: 1);
+  // void startDiagnosticTimer() {
+  //   const Duration updateInterval = Duration(seconds: 1);
 
-    Timer.periodic(updateInterval, (Timer timer) async {
-      await getData(); // Update temperature periodically
-    });
+  //   Timer.periodic(updateInterval, (Timer timer) async {
+  //     await getValues(); // Update temperature periodically
+  //   });
+  // }
+
+  void processData(Completer<bool> isComplete) async {
+    bool isCompleted = await isComplete.future;
+    if (isCompleted == true) {
+      await pneumosenseModel.loadModel();
+      setState(() {
+        progress = 0.7;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        tempAvg = connect.getAverage(tempAvgList);
+        oxyAvg = connect.getAverage(oxyAvgList);
+        pulseAvg = connect.getAverage(pulseAvgList);
+        // tempAvg = 41;
+        // oxyAvg = 40;
+        // pulseAvg = 9;
+        progress = 0.8;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        print(progress);
+        print(tempAvg);
+        print(oxyAvg);
+        print(pulseAvg);
+        print(
+            '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+        tempAvgList.clear();
+        oxyAvgList.clear();
+        pulseAvgList.clear();
+        progress = 1.0;
+        progressMul = progress * 100;
+        progressText = progressMul.toStringAsFixed(0);
+        isVisible = true;
+      });
+      final result = await pneumosenseModel.predict(
+          // Call predict inside the callback
+          tempAvg: tempAvg,
+          pulseAvg: pulseAvg,
+          oxyAvg: oxyAvg);
+      file.writeJsonFile(
+          temp: tempAvg,
+          pulse: pulseAvg,
+          oxy: oxyAvg,
+          result: result,
+          date: DateFormat('MMMM dd,yyyy').format(now),
+          time: DateFormat('hh:mm:ss a').format(now));
+    }
+  }
+
+  void getDiagData() {
+    bool timerCanceled = false;
+    if (progress < 0.6) {
+      Timer.periodic(Duration(seconds: 1), (timer) async {
+        await getValues(timerCanceled);
+
+        if (progress >= 0.6) {
+          timerCanceled = true;
+          isComplete.complete(true);
+          timer.cancel();
+        }
+      });
+    }
+    // else if (progress >= 0.6) {
+    //   setState(() {
+    //     progress = 1.0;
+    //     progressMul = progress * 100;
+    //     progressText = progressMul.toStringAsFixed(0);
+    //     tempAvg = connect.getAverage(tempAvgList);
+    //     oxyAvg = connect.getAverage(oxyAvgList);
+    //     pulseAvg = connect.getAverage(pulseAvgList);
+    //     print(progress);
+    //     print(tempAvg);
+    //     print(oxyAvg);
+    //     print(pulseAvg);
+    //     print(
+    //         '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+    //     tempAvgList.clear();
+    //     oxyAvgList.clear();
+    //     pulseAvgList.clear();
+    //   });
+    // }
+
+    // while (progress < 0.6) {
+    //   startDiagnosticTimer();
+    // }
+    // if (progress >= 0.6) {
+    //   setState(() {
+    //     progress = 1.0;
+    //     progressMul = progress * 100;
+    //     progressText = progressMul.toStringAsFixed(0);
+    //     tempAvg = connect.getAverage(tempAvgList);
+    //     oxyAvg = connect.getAverage(oxyAvgList);
+    //     pulseAvg = connect.getAverage(pulseAvgList);
+    //     print(progress);
+    //     print(tempAvg);
+    //     print(oxyAvg);
+    //     print(pulseAvg);
+    //     print(
+    //         '${tempAvgList.length},${oxyAvgList.length},${pulseAvgList.length}');
+    //     tempAvgList.clear();
+    //     oxyAvgList.clear();
+    //     pulseAvgList.clear();
+    //   });
+    // }
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
   }
 
@@ -154,7 +344,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                               backgroundColor:
                                   FlutterFlowTheme.of(context).accent4,
                               center: Text(
-                                '${progress * 100}%',
+                                '${progressText}%',
                                 style: FlutterFlowTheme.of(context)
                                     .headlineLarge
                                     .override(
@@ -176,7 +366,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Getting Average Temperature',
+                              'Please wait while the diagnosis is complete.',
                               style: FlutterFlowTheme.of(context)
                                   .bodyMedium
                                   .override(
@@ -193,38 +383,43 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                 ),
                 Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 0.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FFButtonWidget(
-                        onPressed: () async {
-                          context.goNamed('DiagnosticPhaseTwo');
-                        },
-                        text: 'View Results',
-                        options: FFButtonOptions(
-                          height: 40.0,
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              24.0, 0.0, 24.0, 0.0),
-                          iconPadding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 0.0, 0.0, 0.0),
-                          color: Color(0xFFDDDDDD),
-                          textStyle: FlutterFlowTheme.of(context)
-                              .titleSmall
-                              .override(
-                                fontFamily: 'sf pro display',
-                                color: FlutterFlowTheme.of(context).primaryText,
-                                useGoogleFonts: false,
-                              ),
-                          elevation: 3.0,
-                          borderSide: BorderSide(
-                            color: Colors.transparent,
-                            width: 1.0,
+                  child: Visibility(
+                    visible: isVisible,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        FFButtonWidget(
+                          onPressed: () async {
+                            connect.sendDiagDataToWemos();
+                            context.goNamed('DiagnosticPhaseTwo');
+                          },
+                          text: 'View Results',
+                          options: FFButtonOptions(
+                            height: 40.0,
+                            padding: EdgeInsetsDirectional.fromSTEB(
+                                24.0, 0.0, 24.0, 0.0),
+                            iconPadding: EdgeInsetsDirectional.fromSTEB(
+                                0.0, 0.0, 0.0, 0.0),
+                            color: Color(0xFFDDDDDD),
+                            textStyle: FlutterFlowTheme.of(context)
+                                .titleSmall
+                                .override(
+                                  fontFamily: 'sf pro display',
+                                  color:
+                                      FlutterFlowTheme.of(context).primaryText,
+                                  useGoogleFonts: false,
+                                ),
+                            elevation: 3.0,
+                            borderSide: BorderSide(
+                              color: Colors.transparent,
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(18.0),
                           ),
-                          borderRadius: BorderRadius.circular(18.0),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],
