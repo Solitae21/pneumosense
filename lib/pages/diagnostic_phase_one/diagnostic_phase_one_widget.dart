@@ -17,8 +17,16 @@ import 'dart:convert';
 import '../../methods/learning_model.dart' as pneumosense;
 
 class DiagnosticPhaseOneWidget extends StatefulWidget {
-  const DiagnosticPhaseOneWidget({super.key});
+  const DiagnosticPhaseOneWidget({
+    super.key,
+    required this.calibrateTemp,
+    required this.calibrateBpm,
+    required this.calibrateOxy,
+  });
 
+  final double? calibrateTemp;
+  final double? calibrateBpm;
+  final double? calibrateOxy;
   @override
   State<DiagnosticPhaseOneWidget> createState() =>
       _DiagnosticPhaseOneWidgetState();
@@ -44,6 +52,9 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late List<double> pulseAvgList;
   late List<double> oxyAvgList;
   late List<double> tempAvgList;
+  late double _calibrateTemp;
+  late double _calibrateBpm;
+  late double _calibrateOxy;
   late double pulseAvg;
   late double tempAvg;
   late double oxyAvg;
@@ -62,6 +73,9 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
     pulseAvgList = [];
     oxyAvgList = [];
     tempAvgList = [];
+    _calibrateTemp = widget.calibrateTemp!;
+    _calibrateBpm = widget.calibrateBpm!;
+    _calibrateOxy = widget.calibrateOxy!;
     getDiagData();
     processData(isComplete);
     isVisible = false;
@@ -81,15 +95,15 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
             connectionStatus = 'Connected';
             _temp = jsonData['tempVal'];
             _toRound = _temp.toStringAsFixed(2);
-            _temp = double.parse(_toRound!);
+            _temp = double.parse(_toRound!) + _calibrateTemp;
 
             _pulse = jsonData['pulseVal'];
             _pulseRound = _pulse.toStringAsFixed(2);
-            _pulse = double.parse(_pulseRound!);
+            _pulse = double.parse(_pulseRound!) + _calibrateBpm;
 
             _oxy = jsonData['oxyVal'];
             _oxyRound = _oxy.toStringAsFixed(2);
-            _oxy = double.parse(_oxyRound!);
+            _oxy = double.parse(_oxyRound!) + _calibrateOxy;
 
             // tempVal = _temp.toString();
             // print('Temp: $tempVal'); // Debug print
@@ -98,9 +112,9 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
             // pulseVal = _pulse.toString();
             // print('Pulse: $pulseVal'); // Debug print
             if (progress < 0.6) {
-              tempAvgList.add(jsonData['tempVal']);
-              pulseAvgList.add(jsonData['pulseVal']);
-              oxyAvgList.add(jsonData['oxyVal']);
+              tempAvgList.add(jsonData['tempVal'] + _calibrateTemp);
+              pulseAvgList.add(jsonData['pulseVal'] + _calibrateBpm);
+              oxyAvgList.add(jsonData['oxyVal'] + _calibrateOxy);
               progress = progress + 0.01;
               progressMul = progress * 100;
               progressText = progressMul.toStringAsFixed(0);

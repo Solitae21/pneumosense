@@ -39,6 +39,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
   dynamic oxyVal;
   dynamic connectionStatus;
   dynamic battery;
+  late double _containerHeight;
   dynamic _battery;
   dynamic _temp;
   dynamic _pulse;
@@ -50,7 +51,13 @@ class _HomePageWidgetState extends State<HomePageWidget>
   bool _isTimerActive = false;
   late DateTime now;
   late bool isVisible;
+  late bool pressed;
   late ReadCsv myCSV;
+  late double _calibrateTemp;
+  late double _calibrateBpm;
+  late double _calibrateOxy;
+  late String lastDiagDate;
+  late String lastDiagTime;
   late List<List<dynamic>> _data;
   bool _isFetchingData = false;
   Future<List<List<dynamic>>>? _dataFuture;
@@ -76,6 +83,13 @@ class _HomePageWidgetState extends State<HomePageWidget>
     pulseVal = '0';
     tempVal = '0';
     oxyVal = '0';
+    _calibrateTemp = 0.5;
+    _calibrateBpm = 0;
+    _calibrateOxy = 0;
+    _containerHeight = 60.0;
+    pressed = false;
+    lastDiagDate = 'Not Available';
+    lastDiagTime = '.';
     connectionStatus = 'Not Connected';
     now = DateTime.now();
     // Split on space to get date part
@@ -137,9 +151,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
     if (!isVisible) {
       Timer.periodic(Duration(seconds: 1), (timer) async {
         await getAlertCSV(isVisible);
-        // if (isVisible) {
-        //   timer.cancel();
-        // }
+        if (isVisible) {
+          timer.cancel();
+        }
       });
     }
   }
@@ -327,26 +341,42 @@ class _HomePageWidgetState extends State<HomePageWidget>
           isVisible = true;
           connectionStatus = 'Connected';
           _temp = jsonData['tempVal'];
-          _toRound = _temp.toStringAsFixed(2);
-          _temp = double.parse(_toRound!);
-
           _pulse = jsonData['pulseVal'];
-          _pulseRound = _pulse.toStringAsFixed(2);
-          _pulse = double.parse(_pulseRound!);
-
           _oxy = jsonData['oxyVal'];
+
+          _toRound = _temp.toStringAsFixed(2);
+          _temp = double.parse(_toRound!) + _calibrateTemp;
+
+          _pulseRound = _pulse.toStringAsFixed(2);
+          _pulse = double.parse(_pulseRound!) + _calibrateBpm;
+
           _oxyRound = _oxy.toStringAsFixed(2);
-          _oxy = double.parse(_oxyRound!);
+          _oxy = double.parse(_oxyRound!) + _calibrateOxy;
 
           _battery = jsonData['batVal'];
           battery = _battery.toStringAsFixed(0);
           print(battery);
 
-          tempVal = _temp.toString();
-          print('Temp: $tempVal'); // Debug print
-          oxyVal = _oxy.toString();
+          if (_temp < 0) {
+            tempVal = '0.0';
+          } else {
+            tempVal = _temp.toString();
+          }
+
+          if (_oxy < 0) {
+            oxyVal = '0.0';
+          } else {
+            oxyVal = _oxy.toString();
+          }
+
+          if (_pulse < 0) {
+            pulseVal = '0.0';
+          } else {
+            pulseVal = _pulse.toString();
+          }
+          // Debug print
+          print('Temp: $tempVal');
           print('Oxygen: $oxyVal'); // Debug print
-          pulseVal = _pulse.toString();
           print('Pulse: $pulseVal');
           // Debug print
         });
@@ -412,14 +442,37 @@ class _HomePageWidgetState extends State<HomePageWidget>
                 child: Row(
                   mainAxisSize: MainAxisSize.max,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 160.0,
-                        height: 60.0,
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment(-1.0, 0.0),
+                    GestureDetector(
+                      onTap: () {
+                        // Add your onPressed behavior here
+                        print('Container pressed');
+                        if (!pressed) {
+                          setState(() {
+                            _containerHeight = 60.0;
+                            pressed = true;
+                            _calibrateTemp = 0.5;
+                            _calibrateBpm = 0.0;
+                            _calibrateOxy = 0.0;
+                          });
+                        } else {
+                          setState(() {
+                            _containerHeight = 70.0;
+                            pressed = false;
+                            _calibrateTemp = 5.0;
+                            _calibrateBpm = 0.0;
+                            _calibrateOxy = -5.0;
+                          });
+                        }
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 160.0,
+                          height: _containerHeight,
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment(-1.0, 0.0),
+                        ),
                       ),
                     ),
                   ],
@@ -979,14 +1032,14 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                         MainAxisSize.max,
                                                     children: [
                                                       Text(
-                                                        'February 07, 2024 (6:41 AM)',
+                                                        '${lastDiagDate}',
                                                         style: FlutterFlowTheme
                                                                 .of(context)
                                                             .bodyMedium
                                                             .override(
                                                               fontFamily:
                                                                   'sf pro display',
-                                                              fontSize: 15.0,
+                                                              fontSize: 14.0,
                                                               fontWeight:
                                                                   FontWeight
                                                                       .w500,
@@ -1018,6 +1071,23 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                                   disposeTimer();
                                                   context.pushNamed(
                                                     'DiagnosticPhaseOne',
+                                                    queryParameters: {
+                                                      'calibrateTemp':
+                                                          serializeParam(
+                                                        _calibrateTemp,
+                                                        ParamType.double,
+                                                      ),
+                                                      'calibrateBpm':
+                                                          serializeParam(
+                                                        _calibrateBpm,
+                                                        ParamType.double,
+                                                      ),
+                                                      'calibrateOxy':
+                                                          serializeParam(
+                                                        _calibrateOxy,
+                                                        ParamType.double,
+                                                      ),
+                                                    }.withoutNulls,
                                                     extra: <String, dynamic>{
                                                       kTransitionInfoKey:
                                                           TransitionInfo(
@@ -1142,6 +1212,11 @@ class _HomePageWidgetState extends State<HomePageWidget>
                                 } else if (snapshot.hasData) {
                                   final data = snapshot.data!;
                                   _isFetchingData = false;
+
+                                  lastDiagDate =
+                                      '${data[data.length - 1][4]}(${data[data.length - 1][5]})';
+                                  // lastDiagTime = data[data.length - 1][5];
+
                                   return ListView.builder(
                                     itemCount: data.length,
                                     itemBuilder: (context, index) {

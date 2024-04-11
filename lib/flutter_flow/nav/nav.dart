@@ -51,7 +51,20 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: 'DiagnosticPhaseOne',
           path: '/diagnosticPhaseOne',
-          builder: (context, params) => DiagnosticPhaseOneWidget(),
+          builder: (context, params) => DiagnosticPhaseOneWidget(
+            calibrateTemp: params.getParam(
+              'calibrateTemp',
+              ParamType.double,
+            ),
+            calibrateBpm: params.getParam(
+              'calibrateBpm',
+              ParamType.double,
+            ),
+            calibrateOxy: params.getParam(
+              'calibrateOxy',
+              ParamType.double,
+            ),
+          ),
         ),
         FFRoute(
           name: 'DiagnosticPhaseTwo',
