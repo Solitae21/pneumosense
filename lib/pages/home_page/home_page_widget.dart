@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:pneumosense/components/alertContainer.dart';
 import 'package:pneumosense/components/freshTab.dart';
 import 'package:pneumosense/components/historyContainer.dart';
 import 'package:pneumosense/methods/getCSV.dart';
+import 'package:pneumosense/methods/notif.dart';
 
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -67,6 +69,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
       StreamController<String>.broadcast();
   final StreamController<String> _dateStreamController =
       StreamController<String>.broadcast();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   // late List<int> rawBattList;
   // late String formattedTime;
   @override
@@ -107,6 +112,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
     // _dataFuture = myCSV.downloadCSVData();
     CSVTimer();
     alertCSVTimer();
+    Notif.initialize(flutterLocalNotificationsPlugin);
   }
 
   @override
@@ -340,6 +346,11 @@ class _HomePageWidgetState extends State<HomePageWidget>
         setState(() {
           isVisible = true;
           connectionStatus = 'Connected';
+          Notif.showBigTextNotification(
+              title: 'You are Connected!',
+              body: 'You are now connected with the device.',
+              fln: flutterLocalNotificationsPlugin);
+
           _temp = jsonData['tempVal'];
           _pulse = jsonData['pulseVal'];
           _oxy = jsonData['oxyVal'];
@@ -359,18 +370,40 @@ class _HomePageWidgetState extends State<HomePageWidget>
 
           if (_temp < 0) {
             tempVal = '0.0';
+          } else if (_temp > 40 || _temp < 38) {
+            if (_temp > 40) {
+              Notif.showBigTextNotification(
+                  title: 'Alert!',
+                  body: 'High Body Temperature! Check your goat condition.',
+                  fln: flutterLocalNotificationsPlugin);
+            } else {
+              Notif.showBigTextNotification(
+                  title: 'Alert!',
+                  body: 'Low Body Temperature! Check your goat condition.',
+                  fln: flutterLocalNotificationsPlugin);
+            }
           } else {
             tempVal = _temp.toString();
           }
 
           if (_oxy < 0) {
             oxyVal = '0.0';
+          } else if (_oxy < 96) {
+            Notif.showBigTextNotification(
+                title: 'Alert!',
+                body: 'Low Oxygen Saturation! Check your goat condition.',
+                fln: flutterLocalNotificationsPlugin);
           } else {
             oxyVal = _oxy.toString();
           }
 
           if (_pulse < 0) {
             pulseVal = '0.0';
+          } else if (_pulse < 75) {
+            Notif.showBigTextNotification(
+                title: 'Alert!',
+                body: 'Low Pulse Rate! Check your goat condition.',
+                fln: flutterLocalNotificationsPlugin);
           } else {
             pulseVal = _pulse.toString();
           }
