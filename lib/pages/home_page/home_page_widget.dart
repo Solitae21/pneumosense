@@ -71,6 +71,11 @@ class _HomePageWidgetState extends State<HomePageWidget>
       StreamController<String>.broadcast();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  Duration _duration = Duration(minutes: 1);
+  Timer? _timer;
+  late String badTemp;
+  late String badOxy;
+  late String badPulse;
 
   // late List<int> rawBattList;
   // late String formattedTime;
@@ -100,6 +105,9 @@ class _HomePageWidgetState extends State<HomePageWidget>
     // Split on space to get date part
     _updateTimer = Timer(Duration.zero, () {});
     _isTimerActive = true;
+    badTemp = '';
+    badPulse = '';
+    badOxy = '';
     startTempUpdateTimer();
     requestStoragePermission();
     WidgetsBinding.instance!.addObserver(this);
@@ -113,6 +121,7 @@ class _HomePageWidgetState extends State<HomePageWidget>
     CSVTimer();
     alertCSVTimer();
     Notif.initialize(flutterLocalNotificationsPlugin);
+    listenBadVitals();
   }
 
   @override
@@ -148,6 +157,10 @@ class _HomePageWidgetState extends State<HomePageWidget>
         await getCSV(isVisible);
         if (isVisible) {
           timer.cancel();
+          // Notif.showBigTextNotification(
+          //     title: 'You are Connected!',
+          //     body: 'You are now connected with the device.',
+          //     fln: flutterLocalNotificationsPlugin);
         }
       });
     }
@@ -334,6 +347,50 @@ class _HomePageWidgetState extends State<HomePageWidget>
   //   print(rawBattList);
   //   return 0;
   // }
+  // void changeTempAlertDuration() {
+  //   setState(() {
+  //     _duration = Duration(seconds: 3600);
+  //     _timer?.cancel();
+  //     _timer = Timer.periodic(_duration, (_) => print("Timer Tick"));
+  //   });
+  // }
+
+  void listenBadVitals() {
+    if (!isVisible) {
+      Timer.periodic(Duration(minutes: 1), (timer) async {
+        await checkBadVitals();
+      });
+    }
+  }
+
+  Future<void> checkBadVitals() async {
+    try {
+      if (isVisible) {
+        if (badTemp == 'high' || badTemp == 'low') {
+          Notif.showBigTextNotification(
+              title: 'Alert!',
+              body: (badTemp == 'high')
+                  ? 'High Body Temperature! Check your goat condition.'
+                  : 'Low Body Temperature! Check your goat condition.',
+              fln: flutterLocalNotificationsPlugin);
+        }
+        if (badPulse == 'low') {
+          Notif.showBigTextNotification(
+              title: 'Alert!',
+              body: 'Low Pulse Rate! Check your goat condition.',
+              fln: flutterLocalNotificationsPlugin);
+        }
+        if (badOxy == 'low') {
+          Notif.showBigTextNotification(
+              title: 'Alert!',
+              body: 'Low Oxygen Saturation! Check your goat condition.',
+              fln: flutterLocalNotificationsPlugin);
+        }
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
 
   Future<void> checkConnection() async {
     final String wemosIPAddress =
@@ -346,10 +403,6 @@ class _HomePageWidgetState extends State<HomePageWidget>
         setState(() {
           isVisible = true;
           connectionStatus = 'Connected';
-          Notif.showBigTextNotification(
-              title: 'You are Connected!',
-              body: 'You are now connected with the device.',
-              fln: flutterLocalNotificationsPlugin);
 
           _temp = jsonData['tempVal'];
           _pulse = jsonData['pulseVal'];
@@ -368,44 +421,51 @@ class _HomePageWidgetState extends State<HomePageWidget>
           battery = _battery.toStringAsFixed(0);
           print(battery);
 
-          if (_temp < 0) {
+          if (_temp < 0 || _temp == 0) {
             tempVal = '0.0';
-          } else if (_temp > 40 || _temp < 38) {
+          } else if ((_temp > 40 || _temp < 35) && _temp > 0) {
             if (_temp > 40) {
-              Notif.showBigTextNotification(
-                  title: 'Alert!',
-                  body: 'High Body Temperature! Check your goat condition.',
-                  fln: flutterLocalNotificationsPlugin);
-            } else {
-              Notif.showBigTextNotification(
-                  title: 'Alert!',
-                  body: 'Low Body Temperature! Check your goat condition.',
-                  fln: flutterLocalNotificationsPlugin);
+              // Notif.showBigTextNotification(
+              //     title: 'Alert!',
+              //     body: 'High Body Temperature! Check your goat condition.',
+              //     fln: flutterLocalNotificationsPlugin);
+              setState(() {
+                badTemp = 'high';
+              });
+            } else if (_temp < 35 && _temp > 0) {
+              // Notif.showBigTextNotification(
+              //     title: 'Alert!',
+              //     body: 'Low Body Temperature! Check your goat condition.',
+              //     fln: flutterLocalNotificationsPlugin);
+              setState(() {
+                badTemp = 'low';
+              });
             }
+            tempVal = _temp.toStringAsFixed(2);
           } else {
-            tempVal = _temp.toString();
+            tempVal = _temp.toStringAsFixed(2);
           }
 
           if (_oxy < 0) {
             oxyVal = '0.0';
-          } else if (_oxy < 96) {
-            Notif.showBigTextNotification(
-                title: 'Alert!',
-                body: 'Low Oxygen Saturation! Check your goat condition.',
-                fln: flutterLocalNotificationsPlugin);
+          } else if (_oxy < 96 && (_oxy > 0)) {
+            setState(() {
+              badOxy = 'low';
+            });
+            oxyVal = _oxy.toStringAsFixed(2);
           } else {
-            oxyVal = _oxy.toString();
+            oxyVal = _oxy.toStringAsFixed(2);
           }
 
           if (_pulse < 0) {
             pulseVal = '0.0';
-          } else if (_pulse < 75) {
-            Notif.showBigTextNotification(
-                title: 'Alert!',
-                body: 'Low Pulse Rate! Check your goat condition.',
-                fln: flutterLocalNotificationsPlugin);
+          } else if (_pulse < 80 && (_pulse > 0)) {
+            setState(() {
+              badPulse = 'low';
+            });
+            pulseVal = _pulse.toStringAsFixed(2);
           } else {
-            pulseVal = _pulse.toString();
+            pulseVal = _pulse.toStringAsFixed(2);
           }
           // Debug print
           print('Temp: $tempVal');

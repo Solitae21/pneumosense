@@ -62,6 +62,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
   late bool isVisible;
   FileManager file = FileManager();
   DateTime now = DateTime.now();
+  late String _status;
 
   @override
   void initState() {
@@ -79,6 +80,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
     getDiagData();
     processData(isComplete);
     isVisible = false;
+    _status = 'Loading...';
   }
 
   Completer<bool> isComplete = Completer<bool>();
@@ -112,16 +114,25 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
             // pulseVal = _pulse.toString();
             // print('Pulse: $pulseVal'); // Debug print
             if (progress < 0.6) {
-              tempAvgList.add(jsonData['tempVal'] + _calibrateTemp);
-              pulseAvgList.add(jsonData['pulseVal'] + _calibrateBpm);
-              oxyAvgList.add(jsonData['oxyVal'] + _calibrateOxy);
-              progress = progress + 0.01;
-              progressMul = progress * 100;
-              progressText = progressMul.toStringAsFixed(0);
-              print(tempAvgList);
-              print(oxyAvgList);
-              print(pulseAvgList);
-              print(progress);
+              if ((jsonData['tempVal'] > 0) &&
+                  (jsonData['pulseVal'] > 0) &&
+                  (jsonData['oxyVal'] > 0)) {
+                tempAvgList.add(jsonData['tempVal'] + _calibrateTemp);
+                pulseAvgList.add(jsonData['pulseVal'] + _calibrateBpm);
+                oxyAvgList.add(jsonData['oxyVal'] + _calibrateOxy);
+                progress = progress + 0.01;
+                progressMul = progress * 100;
+                progressText = progressMul.toStringAsFixed(0);
+                print(tempAvgList);
+                print(oxyAvgList);
+                print(pulseAvgList);
+                print(progress);
+                _status = 'Please wait while the diagnosis is complete.';
+              } else {
+                _status =
+                    'Unstable Data Stream. Please check if the device is properly attached to the goat.';
+                print('Please Check you device if it is properly attached');
+              }
             }
           });
         } else {
@@ -181,6 +192,7 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
         progressMul = progress * 100;
         progressText = progressMul.toStringAsFixed(0);
         isVisible = true;
+        _status = 'Diagnosis complete.';
       });
       final result = await pneumosenseModel.predict(
           // Call predict inside the callback
@@ -359,25 +371,28 @@ class _DiagnosticPhaseOneWidgetState extends State<DiagnosticPhaseOneWidget> {
                         ),
                       ),
                       Padding(
-                        padding:
-                            EdgeInsetsDirectional.fromSTEB(0.0, 30.0, 0.0, 0.0),
+                        padding: EdgeInsetsDirectional.fromSTEB(0, 30, 0, 0),
                         child: Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              'Please wait while the diagnosis is complete.',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    fontFamily: 'sf pro display',
-                                    fontSize: 15.0,
-                                    useGoogleFonts: false,
-                                  ),
+                            Expanded(
+                              child: Text(
+                                _status,
+                                textAlign: TextAlign.center,
+                                style: FlutterFlowTheme.of(context)
+                                    .bodyMedium
+                                    .override(
+                                      fontFamily: 'sf pro display',
+                                      fontSize: 15,
+                                      letterSpacing: 0,
+                                      useGoogleFonts: false,
+                                    ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),
