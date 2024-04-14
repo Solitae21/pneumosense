@@ -1,6 +1,6 @@
 # pneumosense
 
-A new Flutter project.
+Our 4th year Thesis Project
 
 ## Getting Started
 
