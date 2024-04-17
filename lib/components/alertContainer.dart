@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pneumosense/flutter_flow/flutter_flow_theme.dart';
 
 class AlertWidget extends StatefulWidget {
@@ -50,21 +51,14 @@ class _MyWidgetState extends State<AlertWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 330,
-      height: 103,
-      decoration: BoxDecoration(
-        color: FlutterFlowTheme.of(context).secondaryBackground,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Container(
-                width: 330,
-                height: 80,
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.max,
+          children: [
+            Flexible(
+              child: Container(
                 decoration: BoxDecoration(
                   color: Color(0xFFBED8F1),
                   borderRadius: BorderRadius.circular(10),
@@ -200,52 +194,52 @@ class _MyWidgetState extends State<AlertWidget> {
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+        Align(
+          alignment: AlignmentDirectional(0, 0),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                '${widget.date}',
+                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      fontFamily: 'sf pro display',
+                      color: Color(0xFFBBAACC),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      useGoogleFonts: false,
+                    ),
+              ),
+              Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
+                child: Text(
+                  '·',
+                  style: FlutterFlowTheme.of(context).bodyMedium.override(
+                        fontFamily: 'sf pro display',
+                        color: Color(0xFFBBAACC),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        useGoogleFonts: false,
+                      ),
+                ),
+              ),
+              Text(
+                ' ${widget.time}',
+                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                      fontFamily: 'sf pro display',
+                      color: Color(0xFFBBAACC),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      useGoogleFonts: false,
+                    ),
+              ),
             ],
           ),
-          Align(
-            alignment: AlignmentDirectional(0, 0),
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  '${widget.date}',
-                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        fontFamily: 'sf pro display',
-                        color: Color(0xFFBBAACC),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        useGoogleFonts: false,
-                      ),
-                ),
-                Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
-                  child: Text(
-                    '·',
-                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                          fontFamily: 'sf pro display',
-                          color: Color(0xFFBBAACC),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          useGoogleFonts: false,
-                        ),
-                  ),
-                ),
-                Text(
-                  ' ${widget.time}',
-                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        fontFamily: 'sf pro display',
-                        color: Color(0xFFBBAACC),
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        useGoogleFonts: false,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

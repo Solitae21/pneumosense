@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:pneumosense/flutter_flow/flutter_flow_theme.dart';
 
 class HistoryContainer extends StatefulWidget {
@@ -26,21 +27,14 @@ class _HistoryContainer extends State<HistoryContainer> {
   @override
   Widget build(BuildContext context) {
     return double.parse(widget.result) > 0.5
-        ? Container(
-            width: 330,
-            height: 103,
-            decoration: BoxDecoration(
-              color: FlutterFlowTheme.of(context).secondaryBackground,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      width: 330,
-                      height: 83,
+        ? Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Flexible(
+                    child: Container(
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),
                         borderRadius: BorderRadius.circular(10),
@@ -253,7 +247,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                         Icons.error,
                                         color: FlutterFlowTheme.of(context)
                                             .secondary,
-                                        size: 40,
+                                        size: 30,
                                       ),
                                     ],
                                   ),
@@ -269,7 +263,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                               color:
                                                   FlutterFlowTheme.of(context)
                                                       .secondary,
-                                              fontSize: 14,
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                               useGoogleFonts: false,
                                             ),
@@ -283,69 +277,61 @@ class _HistoryContainer extends State<HistoryContainer> {
                         ),
                       ),
                     ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional(0, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      widget.date,
+                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                            fontFamily: 'sf pro display',
+                            color: Color(0xFFBBAACC),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            useGoogleFonts: false,
+                          ),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
+                      child: Text(
+                        '·',
+                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                              fontFamily: 'sf pro display',
+                              color: Color(0xFFBBAACC),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              useGoogleFonts: false,
+                            ),
+                      ),
+                    ),
+                    Text(
+                      ' ${widget.time}',
+                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                            fontFamily: 'sf pro display',
+                            color: Color(0xFFBBAACC),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            useGoogleFonts: false,
+                          ),
+                    ),
                   ],
                 ),
-                Align(
-                  alignment: AlignmentDirectional(0, 0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        widget.date,
-                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily: 'sf pro display',
-                              color: Color(0xFFBBAACC),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              useGoogleFonts: false,
-                            ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
-                        child: Text(
-                          '·',
-                          style:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    fontFamily: 'sf pro display',
-                                    color: Color(0xFFBBAACC),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    useGoogleFonts: false,
-                                  ),
-                        ),
-                      ),
-                      Text(
-                        ' ${widget.time}',
-                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily: 'sf pro display',
-                              color: Color(0xFFBBAACC),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              useGoogleFonts: false,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           )
-        : Container(
-            width: 330,
-            height: 103,
-            decoration: BoxDecoration(
-              color: FlutterFlowTheme.of(context).secondaryBackground,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      width: 330,
-                      height: 83,
+        : Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  Flexible(
+                    child: Container(
                       decoration: BoxDecoration(
                         color: Color(0xFFBED8F1),
                         borderRadius: BorderRadius.circular(10),
@@ -558,8 +544,8 @@ class _HistoryContainer extends State<HistoryContainer> {
                                         borderRadius: BorderRadius.circular(8),
                                         child: Image.asset(
                                           'assets/images/heart.png',
-                                          width: 40,
-                                          height: 40,
+                                          width: 30,
+                                          height: 30,
                                           fit: BoxFit.cover,
                                         ),
                                       ),
@@ -575,7 +561,7 @@ class _HistoryContainer extends State<HistoryContainer> {
                                             .override(
                                               fontFamily: 'sf pro display',
                                               color: Color(0xFF007C2F),
-                                              fontSize: 14,
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                               useGoogleFonts: false,
                                             ),
@@ -589,53 +575,52 @@ class _HistoryContainer extends State<HistoryContainer> {
                         ),
                       ),
                     ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: AlignmentDirectional(0, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      widget.date,
+                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                            fontFamily: 'sf pro display',
+                            color: Color(0xFFBBAACC),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            useGoogleFonts: false,
+                          ),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
+                      child: Text(
+                        '·',
+                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                              fontFamily: 'sf pro display',
+                              color: Color(0xFFBBAACC),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              useGoogleFonts: false,
+                            ),
+                      ),
+                    ),
+                    Text(
+                      ' ${widget.time}',
+                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                            fontFamily: 'sf pro display',
+                            color: Color(0xFFBBAACC),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            useGoogleFonts: false,
+                          ),
+                    ),
                   ],
                 ),
-                Align(
-                  alignment: AlignmentDirectional(0, 0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        widget.date,
-                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily: 'sf pro display',
-                              color: Color(0xFFBBAACC),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              useGoogleFonts: false,
-                            ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(3, 0, 3, 0),
-                        child: Text(
-                          '·',
-                          style:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    fontFamily: 'sf pro display',
-                                    color: Color(0xFFBBAACC),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    useGoogleFonts: false,
-                                  ),
-                        ),
-                      ),
-                      Text(
-                        ' ${widget.time}',
-                        style: FlutterFlowTheme.of(context).bodyMedium.override(
-                              fontFamily: 'sf pro display',
-                              color: Color(0xFFBBAACC),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              useGoogleFonts: false,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           );
   }
 }
